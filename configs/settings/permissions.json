@@ -1,0 +1,8 @@
+{
+  "_comment": "Portable, safe permission allowlist. Merge the `permissions.allow` entries into your project's .claude/settings.local.json. These are low-risk, frequently-approved commands worth pre-allowing so the agent isn't prompted repeatedly. Omitted on purpose: the one-off machine-setup commands (nvm/winget installs) from the original workspace — those are environment bootstrap, not a reusable policy.",
+  "permissions": {
+    "allow": [
+      "Bash(npm run *)"
+    ]
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "_comment": "Environment-level preferences that live in ~/.claude/settings.json (global, not per-project). Merge these keys in. `effortLevel: xhigh` maximizes reasoning depth; `agentPushNotifEnabled` sends a push when a background agent finishes. Adjust `model` to taste.",
+  "model": "opus",
+  "effortLevel": "xhigh",
+  "agentPushNotifEnabled": true
+}

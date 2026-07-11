@@ -1,0 +1,11 @@
+# Never commit real secrets. MCP configs with tokens live in the *consuming*
+# project, not here — but guard against accidental drops of a filled-in template.
+.mcp.json
+*.local.json
+.env
+.env.*
+!.env.example
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db

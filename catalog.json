@@ -1,0 +1,179 @@
+{
+  "$schema": "./catalog.schema.md",
+  "version": 1,
+  "description": "Source of truth for /nest-init. Each entry is an opt-in, reusable agent config. `scope` = where it installs (project = the current repo's .claude; global = ~/.claude). `recommendWhen` lets /nest-init pre-check relevant items after sniffing the project.",
+  "entries": [
+    {
+      "id": "session-wrap-up",
+      "title": "Session context wrap-up protocol",
+      "category": "rule",
+      "scope": "project",
+      "summary": "CLAUDE.md protocol: work in atomic build-passing units, checkpoint each, and hand off remaining scope to a roadmap item when the context window fills.",
+      "assets": ["configs/rules/session-wrap-up.md"],
+      "install": [
+        "Append the body of configs/rules/session-wrap-up.md into the project's CLAUDE.md (create CLAUDE.md if absent)."
+      ],
+      "recommendWhen": "Project has a build + commit workflow and sessions get long.",
+      "dependsOn": ["context-guard-hook", "roadmap-command"],
+      "requiresSecret": false
+    },
+    {
+      "id": "context-guard-hook",
+      "title": "Context-budget wrap-up guard (hook)",
+      "category": "hook",
+      "scope": "project",
+      "summary": "PostToolUse hook that watches context-window occupancy and injects a wrap-up nudge at soft/hard thresholds. Zero model tokens.",
+      "assets": ["configs/hooks/context-guard.mjs", "configs/hooks/settings.hooks.json"],
+      "install": [
+        "Copy configs/hooks/context-guard.mjs to <project>/.claude/hooks/context-guard.mjs",
+        "Merge the context-guard PostToolUse entry from configs/hooks/settings.hooks.json into <project>/.claude/settings.local.json, replacing the command path with the real absolute path to the copied hook."
+      ],
+      "recommendWhen": "Always useful; strongest when paired with session-wrap-up.",
+      "dependsOn": ["session-wrap-up"],
+      "requiresSecret": false
+    },
+    {
+      "id": "memory-after-commit-hook",
+      "title": "Memory review after commit (hook)",
+      "category": "hook",
+      "scope": "project",
+      "summary": "PostToolUse (Bash) hook: after any `git commit`, nudges the agent to review the session and update auto-memory.",
+      "assets": ["configs/hooks/settings.hooks.json"],
+      "install": [
+        "Merge the memory-review-after-commit PostToolUse entry from configs/hooks/settings.hooks.json into <project>/.claude/settings.local.json."
+      ],
+      "recommendWhen": "Project is a git repo and you use the auto-memory protocol.",
+      "dependsOn": ["memory-protocol"],
+      "requiresSecret": false
+    },
+    {
+      "id": "roadmap-command",
+      "title": "Roadmap command + docs/roadmap convention",
+      "category": "command",
+      "scope": "project",
+      "summary": "/roadmap slash command that lists kickoff-ready task briefs with stable, deterministic IDs (one markdown file per task under docs/roadmap/).",
+      "assets": ["configs/commands/roadmap.md"],
+      "install": [
+        "Copy configs/commands/roadmap.md to <project>/.claude/commands/roadmap.md",
+        "Create the docs/roadmap/ directory (this is where task briefs live)."
+      ],
+      "recommendWhen": "Any project that accrues future-work briefs / needs clean session handoffs.",
+      "dependsOn": [],
+      "requiresSecret": false
+    },
+    {
+      "id": "memory-protocol",
+      "title": "Auto-memory protocol",
+      "category": "convention",
+      "scope": "global",
+      "summary": "File-based persistent memory kept outside the repo (~/.claude/projects/<slug>/memory/): one fact per file + a MEMORY.md index. Conventions for what to save and how.",
+      "assets": ["configs/memory/README.md"],
+      "install": [
+        "This is a convention, not a copied file. Review configs/memory/README.md and follow it; the memory files are created on demand by the harness."
+      ],
+      "recommendWhen": "Any ongoing project where cross-session recall pays off.",
+      "dependsOn": [],
+      "requiresSecret": false
+    },
+    {
+      "id": "npm-permissions",
+      "title": "Safe permission allowlist",
+      "category": "settings",
+      "scope": "project",
+      "summary": "Pre-allow low-risk, frequently-approved commands (e.g. `npm run *`) so the agent isn't prompted repeatedly.",
+      "assets": ["configs/settings/permissions.json"],
+      "install": [
+        "Merge permissions.allow from configs/settings/permissions.json into <project>/.claude/settings.local.json.",
+        "Optionally run /fewer-permission-prompts later to grow the list from your own transcripts."
+      ],
+      "recommendWhen": "Node/npm projects. Adapt the globs for other stacks.",
+      "dependsOn": [],
+      "requiresSecret": false
+    },
+    {
+      "id": "global-settings",
+      "title": "Global agent settings (model / effort / notifications)",
+      "category": "settings",
+      "scope": "global",
+      "summary": "~/.claude/settings.json preferences: model=opus, effortLevel=xhigh, push notifications on background-agent completion.",
+      "assets": ["configs/settings/global-settings.json"],
+      "install": [
+        "Merge the keys from configs/settings/global-settings.json into ~/.claude/settings.json."
+      ],
+      "recommendWhen": "Set once per machine (global). Skip if already configured to taste.",
+      "dependsOn": [],
+      "requiresSecret": false
+    },
+    {
+      "id": "mcp-playwright",
+      "title": "Playwright MCP server",
+      "category": "mcp",
+      "scope": "project",
+      "summary": "Browser automation + screenshots; powers the visual-iteration workflow. No secrets.",
+      "assets": ["configs/mcp/playwright.md"],
+      "install": [
+        "Add the playwright server block from configs/mcp/playwright.md to <project>/.mcp.json, pointing --output-dir at a folder in this project."
+      ],
+      "recommendWhen": "Web / UI projects, or anything with visual output to iterate on.",
+      "dependsOn": [],
+      "requiresSecret": false
+    },
+    {
+      "id": "mcp-supabase",
+      "title": "Supabase MCP server",
+      "category": "mcp",
+      "scope": "project",
+      "summary": "Inspect/query a Supabase project (tables, migrations, logs, advisors) from the agent.",
+      "assets": ["configs/mcp/supabase.md"],
+      "install": [
+        "Add the supabase server block from configs/mcp/supabase.md to <project>/.mcp.json.",
+        "Provide a real sbp_ access token (never commit it — gitignore .mcp.json or inject from env)."
+      ],
+      "recommendWhen": "Project uses Supabase.",
+      "dependsOn": [],
+      "requiresSecret": true
+    },
+    {
+      "id": "visual-iteration",
+      "title": "Visual iteration workflow",
+      "category": "rule",
+      "scope": "project",
+      "summary": "Serve scratch HTML/SVG over HTTP (Playwright MCP blocks file://), take element screenshots to iterate, clean up scratch PNGs after.",
+      "assets": ["configs/rules/visual-iteration.md"],
+      "install": [
+        "Append the body of configs/rules/visual-iteration.md into the project's CLAUDE.md."
+      ],
+      "recommendWhen": "Projects with hand-tuned visuals (SVG, charts, custom components).",
+      "dependsOn": ["mcp-playwright"],
+      "requiresSecret": false
+    },
+    {
+      "id": "direct-push",
+      "title": "Direct-to-main push + auto-checkpoint",
+      "category": "rule",
+      "scope": "project",
+      "summary": "Push straight to main and auto commit+push finished, build-passing units without being asked. Opt-in per repo.",
+      "assets": ["configs/rules/direct-push.md"],
+      "install": [
+        "Append the body of configs/rules/direct-push.md into the project's CLAUDE.md — ONLY for solo/trunk-based repos."
+      ],
+      "recommendWhen": "Solo repos without PR review or protected branches. Confirm first.",
+      "dependsOn": ["build-before-push"],
+      "requiresSecret": false
+    },
+    {
+      "id": "build-before-push",
+      "title": "Build (not just typecheck) before pushing",
+      "category": "rule",
+      "scope": "project",
+      "summary": "Run the full build the deploy runs (not just a typecheck) before committing/pushing.",
+      "assets": ["configs/rules/build-before-push.md"],
+      "install": [
+        "Append the body of configs/rules/build-before-push.md into the project's CLAUDE.md."
+      ],
+      "recommendWhen": "Any project with a build/compile step that CI or the host runs.",
+      "dependsOn": [],
+      "requiresSecret": false
+    }
+  ]
+}
