@@ -174,6 +174,22 @@
       "recommendWhen": "Any project with a build/compile step that CI or the host runs.",
       "dependsOn": [],
       "requiresSecret": false
+    },
+    {
+      "id": "git-ssh-windows",
+      "title": "Git SSH push fix (Windows + Git Bash)",
+      "category": "environment",
+      "scope": "global",
+      "summary": "Point git at Windows-native ssh.exe globally so SSH pushes from Git Bash work in every repo (the key is never the problem).",
+      "assets": ["configs/environment/git-ssh-windows.md"],
+      "install": [
+        "Verify C:/WINDOWS/System32/OpenSSH/ssh.exe exists.",
+        "Run: git config --global core.sshCommand \"C:/WINDOWS/System32/OpenSSH/ssh.exe\"",
+        "Drop any stale per-repo override: git config --local --unset core.sshCommand"
+      ],
+      "recommendWhen": "Windows machine where SSH git pushes fail/hang from Git Bash. Set once per machine.",
+      "dependsOn": [],
+      "requiresSecret": false
     }
   ]
 }

@@ -31,6 +31,7 @@ Configs come in a few flavours and live at two levels:
 | `visual-iteration` | Visual iteration workflow | rule | project | Hand-tuned SVG/charts/components |
 | `direct-push` | Direct-to-main + auto-checkpoint | rule | project | Solo/trunk-based repos (confirm first) |
 | `build-before-push` | Build before pushing | rule | project | Any project with a build step |
+| `git-ssh-windows` | Git SSH push fix (Windows) | environment | global | SSH pushes fail from Git Bash on Windows |
 
 ---
 
@@ -96,6 +97,16 @@ Defined in a project's `.mcp.json`.
   environment setup, not a reusable policy.)
 - **`global-settings`** (global) — `~/.claude/settings.json`: `model: opus`,
   `effortLevel: xhigh`, `agentPushNotifEnabled: true`.
+
+## Environment (machine-level)
+
+- **`git-ssh-windows`** (global) — on Windows + Git Bash, SSH `git push` fails/hangs
+  in **every** repo because Git Bash's bundled OpenSSH doesn't share the Windows key
+  agent — the key is never the problem. Fix it once, globally, by pointing git at the
+  Windows-native binary: `git config --global core.sshCommand "C:/WINDOWS/System32/OpenSSH/ssh.exe"`.
+  Because it's global, every current and future clone inherits it; a per-repo setting
+  only fixes that one clone. See
+  [`configs/environment/git-ssh-windows.md`](./configs/environment/git-ssh-windows.md).
 
 ## Conventions
 
