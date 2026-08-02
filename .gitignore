@@ -6,6 +6,12 @@
 .env.*
 !.env.example
 
+# Key material — nothing of this kind belongs in a config catalog
+*.pem
+*.key
+id_rsa*
+credentials.json
+
 # OS / editor cruft
 .DS_Store
 Thumbs.db
