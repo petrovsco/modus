@@ -82,7 +82,10 @@ function main() {
   }
 
   const transcript = input.transcript_path;
-  const sessionId = input.session_id || 'unknown';
+  // The session id lands in a tmp file path below, so it may only contain
+  // characters that cannot walk out of the directory.
+  const sessionId =
+    String(input.session_id || 'unknown').replace(/[^A-Za-z0-9._-]/g, '').slice(0, 64) || 'unknown';
   if (!transcript || !fs.existsSync(transcript)) return;
 
   let ctx = null;
