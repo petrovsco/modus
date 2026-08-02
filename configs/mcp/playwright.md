@@ -11,7 +11,7 @@ folder inside *this* project (create it if needed):
     "playwright": {
       "command": "npx",
       "args": [
-        "@playwright/mcp@latest",
+        "@playwright/mcp@0.0.78",
         "--output-dir",
         "<ABSOLUTE_PATH_TO>/playwright-tests"
       ]
@@ -20,6 +20,9 @@ folder inside *this* project (create it if needed):
 }
 ```
 
+- Pin the version, don't use `@latest`: it re-resolves on every server start, so a
+  compromised or simply broken release lands without anyone choosing it. Get the
+  current one with `npm view @playwright/mcp version` and bump deliberately.
 - No secrets required.
 - `--output-dir` is where screenshots/artifacts land — keep it out of the app's
   source tree (and gitignore it if you don't want the shots committed).

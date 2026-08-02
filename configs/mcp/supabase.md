@@ -15,7 +15,7 @@ Add to the project's `.mcp.json` under `mcpServers`:
       "command": "npx",
       "args": [
         "-y",
-        "@supabase/mcp-server-supabase@latest",
+        "@supabase/mcp-server-supabase@0.9.0",
         "--access-token",
         "REPLACE_WITH_SBP_ACCESS_TOKEN"
       ]
@@ -24,6 +24,10 @@ Add to the project's `.mcp.json` under `mcpServers`:
 }
 ```
 
+- Pin the version, don't use `@latest`: it re-resolves on every server start, so a
+  compromised or simply broken release lands without anyone choosing it. Get the
+  current one with `npm view @supabase/mcp-server-supabase version` and bump
+  deliberately.
 - Generate a token at Supabase → Account → Access Tokens.
 - Consider `--read-only` and/or `--project-ref <ref>` to scope what the server can
   touch.

@@ -88,6 +88,10 @@ Defined in a project's `.mcp.json`.
   token — never commit it.** Gitignore `.mcp.json` or inject the token from a secret
   store. Templates use placeholders.
 
+Both templates pin an exact package version rather than `@latest`, which
+re-resolves on every server start. Check the current one with
+`npm view <package> version` at install time and bump deliberately.
+
 ## Settings
 
 - **`npm-permissions`** (project) — a small, safe allowlist (e.g. `Bash(npm run *)`)
