@@ -10,7 +10,7 @@ ones into *this* project (and/or the global `~/.claude`).
 
 ## 0. Locate the agent-nest repo
 
-The repo lives at `~/Projects/tekio-workspace/agent-nest` on this
+The repo lives at `~/Projects\feya-workspace\agent-nest` on this
 machine. If that path is missing, ask the user where they cloned agent-nest before
 continuing. Read `<agent-nest>/catalog.json` — it is the source of truth for the
 checklist. Never guess entries; only offer what's in the catalog.

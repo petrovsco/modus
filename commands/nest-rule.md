@@ -8,7 +8,9 @@ You are running **agent-nest rule capture**. Goal: take the user's raw idea, ref
 it with them, then persist it as a properly-formatted, reusable asset in the
 agent-nest repo and register it in the catalog.
 
-The agent-nest repo is at `~/Projects/tekio-workspace/agent-nest`.
+The agent-nest repo is at `~/Projects\feya-workspace\agent-nest`.
+If that path is missing, ask the user where they cloned agent-nest before
+continuing.
 Seed idea: **$ARGUMENTS**
 
 If `$ARGUMENTS` is empty, ask the user what rule they want to capture.

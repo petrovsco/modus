@@ -18,8 +18,9 @@ Review, read-only:
 - **Permission friction** — commands the user approved repeatedly (candidates for a
   permission allowlist entry — cross-check `/fewer-permission-prompts`).
 - **The existing catalog** — read `<agent-nest>/catalog.json` (repo at
-  `~/Projects/tekio-workspace/agent-nest`) so you don't re-propose
-  something already captured.
+  `~/Projects\feya-workspace\agent-nest`; if that path is missing, ask
+  the user where they cloned agent-nest) so you don't re-propose something already
+  captured.
 
 ## 2. Form candidates
 
