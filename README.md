@@ -114,8 +114,10 @@ import lines. Old id → new home: `context-guard-hook` / `memory-after-commit-h
 
 ## Changing things
 
-- Edit a rule → commit; repos follow next session (sync runs at SessionStart
-  after `/plugin update modus@modus` picks up the new version, or immediately
-  on machines where the marketplace tracks this local clone).
+- Edit a rule (or anything in a plugin) → **bump that plugin's `version`** in
+  its `plugin.json`, commit, then `claude plugin update modus@modus` (per
+  machine). Installs are copied into a versioned cache
+  (`~/.claude/plugins/cache/…`) — without the bump + update, machines keep the
+  old copy. Rules then reach repos at the next session start via the sync.
 - Add anything new → `/modus:capture` keeps `catalog.json` and this README in
   sync and bumps the owning plugin's version.
