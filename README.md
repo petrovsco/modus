@@ -20,7 +20,8 @@ modus/
 ├── .claude-plugin/marketplace.json   ← the marketplace manifest
 ├── plugins/
 │   ├── modus/                        ← CORE (enable once, user scope):
-│   │   ├── commands/                 ←   /modus:init, /modus:capture
+│   │   ├── commands/init.md          ←   /modus:init
+│   │   ├── skills/capture/           ←   the capture watcher skill
 │   │   ├── rules/                    ←   house rules (import-ready bodies)
 │   │   ├── scripts/sync-rules.mjs    ←   SessionStart: rules → ~/.claude/modus/rules/
 │   │   └── hooks/hooks.json
@@ -37,7 +38,7 @@ modus/
 ## One-time setup (per machine)
 
 ```
-git clone git@github.com:petrovsco/agent-nest.git ~/Projects/modus   # rename pending
+git clone git@github.com:petrovsco/modus.git ~/Projects/modus
 ```
 
 Then in any Claude Code session:
@@ -47,8 +48,9 @@ Then in any Claude Code session:
 /plugin        → enable "modus" (user scope)
 ```
 
-Restart. From then on `/modus:init` and `/modus:capture` work in every project,
-and house rules sync to `~/.claude/modus/rules/` at each session start.
+Restart. From then on `/modus:init` works in every project, the capture
+watcher is armed, and house rules sync to `~/.claude/modus/rules/` at each
+session start.
 
 ## Per-repo setup
 
@@ -62,12 +64,12 @@ catalog entries, and installs what you pick:
 - **settings / MCP templates / environment / conventions** → merged or applied
   per the catalog's install steps (the only category that still copies).
 
-## The two commands
+## The command and the watcher
 
-| Command | What it does |
+| Trigger | What it does |
 |---------|--------------|
-| `/modus:init` | Interactive checklist: wire catalog configs into the current repo. |
-| `/modus:capture` | Intake funnel. No args: scan recent work (session, git history, permission friction) and propose configs worth capturing. With args: refine your idea, then save + register it here. |
+| `/modus:init` (you) | Interactive checklist: wire catalog configs into the current repo. |
+| **capture** skill (the model, or you via `/modus:capture`) | The intake funnel, armed in modus-initialized repos: when it notices a correction, a repeated chore, or permission friction, it proposes a reusable config; hand it an idea directly and it refines, saves, and registers it here. Nothing is written before you approve. |
 
 ## House rules — how the import trick works
 
@@ -119,5 +121,5 @@ import lines. Old id → new home: `context-guard-hook` / `memory-after-commit-h
   machine). Installs are copied into a versioned cache
   (`~/.claude/plugins/cache/…`) — without the bump + update, machines keep the
   old copy. Rules then reach repos at the next session start via the sync.
-- Add anything new → `/modus:capture` keeps `catalog.json` and this README in
-  sync and bumps the owning plugin's version.
+- Add anything new → the **capture** skill keeps `catalog.json` and this
+  README in sync and bumps the owning plugin's version.

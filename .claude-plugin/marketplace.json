@@ -11,7 +11,7 @@
     {
       "name": "modus",
       "source": "./plugins/modus",
-      "description": "Core: the /modus:init and /modus:capture commands plus the house-rules sync (rules importable from ~/.claude/modus/rules/). Enable once at user scope."
+      "description": "Core: the /modus:init command, the capture watcher skill, and the house-rules sync (rules importable from ~/.claude/modus/rules/). Enable once at user scope."
     },
     {
       "name": "session-flow",
