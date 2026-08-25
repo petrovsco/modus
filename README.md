@@ -22,6 +22,7 @@ modus/
 │   ├── modus/                        ← CORE (enable once, user scope):
 │   │   ├── commands/init.md          ←   /modus:init
 │   │   ├── skills/capture/           ←   the capture watcher skill
+│   │   ├── skills/decision-watcher/  ←   life-decision watcher → the personal knowledge base inbox
 │   │   ├── rules/                    ←   house rules (import-ready bodies)
 │   │   ├── scripts/sync-rules.mjs    ←   SessionStart: rules → ~/.claude/modus/rules/
 │   │   └── hooks/hooks.json
@@ -48,9 +49,9 @@ Then in any Claude Code session:
 /plugin        → enable "modus" (user scope)
 ```
 
-Restart. From then on `/modus:init` works in every project, the capture
-watcher is armed, and house rules sync to `~/.claude/modus/rules/` at each
-session start.
+Restart. From then on `/modus:init` works in every project, the capture and
+decision watchers are armed, and house rules sync to `~/.claude/modus/rules/`
+at each session start.
 
 ## Per-repo setup
 
@@ -64,12 +65,13 @@ catalog entries, and installs what you pick:
 - **settings / MCP templates / environment / conventions** → merged or applied
   per the catalog's install steps (the only category that still copies).
 
-## The command and the watcher
+## The command and the watchers
 
 | Trigger | What it does |
 |---------|--------------|
 | `/modus:init` (you) | Interactive checklist: wire catalog configs into the current repo. |
 | **capture** skill (the model, or you via `/modus:capture`) | The intake funnel, armed in modus-initialized repos: when it notices a correction, a repeated chore, or permission friction, it proposes a reusable config; hand it an idea directly and it refines, saves, and registers it here. Nothing is written before you approve. |
+| **decision-watcher** skill (the model, or you via `/modus:decision-watcher`) | The OS funnel, armed in every session on machines with `<personal-os>` checked out: when a life- or project-level decision is settled, it drafts a kernel-format entry and — with your yes — stages a proposal in `<personal-os>/inbox/` for `/ingest`. It never appends to the decision log itself; that gate stays in the OS. Inert on machines without the OS. |
 
 ## House rules — how the import trick works
 
