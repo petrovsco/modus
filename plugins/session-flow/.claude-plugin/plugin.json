@@ -2,5 +2,5 @@
   "name": "session-flow",
   "description": "Session discipline for long build sessions: a PostToolUse context guard that injects a wrap-up nudge at ~180k/~195k tokens, a memory-review nudge after each git commit, and /roadmap for deterministic, kickoff-ready task briefs under docs/roadmap/.",
   "version": "1.0.0",
-  "author": { "name": "Peter Shamatoff" }
+  "author": { "name": "Peter Petrov" }
 }

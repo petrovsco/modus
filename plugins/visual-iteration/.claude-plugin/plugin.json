@@ -2,5 +2,5 @@
   "name": "visual-iteration",
   "description": "Iterate on visuals with your own eyes: bundles the Playwright MCP server and a skill covering the serve-over-HTTP + element-screenshot workflow for SVG, charts, and hand-tuned components.",
   "version": "1.0.0",
-  "author": { "name": "Peter Shamatoff" }
+  "author": { "name": "Peter Petrov" }
 }
