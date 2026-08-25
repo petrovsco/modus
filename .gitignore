@@ -1,6 +1,9 @@
 # Never commit real secrets. MCP configs with tokens live in the *consuming*
 # project, not here — but guard against accidental drops of a filled-in template.
+# Plugin-root .mcp.json files are the exception: they are part of the shipped
+# plugins and must be secret-free by design.
 .mcp.json
+!plugins/*/.mcp.json
 *.local.json
 .env
 .env.*

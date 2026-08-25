@@ -1,9 +1,7 @@
 {
-  "_comment": "Merge the PostToolUse array below into your project's .claude/settings.local.json (or global ~/.claude/settings.json). If a `hooks.PostToolUse` array already exists, append these entries to it rather than replacing it. Replace the ABSOLUTE PATH in the context-guard command with the real path to configs/hooks/context-guard.mjs on this machine (Claude Code does not expand ~ or $VARS inside hook commands).",
   "hooks": {
     "PostToolUse": [
       {
-        "_entry": "memory-review-after-commit — nudges an auto-memory review after every git commit",
         "matcher": "Bash",
         "hooks": [
           {
@@ -14,12 +12,11 @@
         ]
       },
       {
-        "_entry": "context-guard — injects a wrap-up nudge when the context window fills up",
         "matcher": "",
         "hooks": [
           {
             "type": "command",
-            "command": "node \"REPLACE_WITH_ABSOLUTE_PATH/.claude/hooks/context-guard.mjs\"",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/context-guard.mjs\"",
             "statusMessage": "Checking context budget"
           }
         ]

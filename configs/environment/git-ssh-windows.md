@@ -29,3 +29,19 @@ git config --global core.sshCommand "C:/WINDOWS/System32/OpenSSH/ssh.exe"
 - If any repo has a stale per-repo override, drop it so global governs:
   `git config --local --unset core.sshCommand`.
 - No secrets involved. This only selects which `ssh` binary git invokes.
+
+## Second failure mode: agent service stopped + passphrase-protected key
+
+Even with `core.sshCommand` set correctly, a non-interactive push can **hang
+silently**: if the *OpenSSH Authentication Agent* Windows service is stopped and
+the key has a passphrase, ssh waits forever for a prompt nobody sees (in
+`BatchMode=yes` it fails fast with `Permission denied (publickey)` instead —
+useful for diagnosis). Fix (2026-08-25, hit in practice):
+
+```powershell
+Set-Service ssh-agent -StartupType Automatic   # survive reboots
+Start-Service ssh-agent
+ssh-add                                        # type the passphrase once
+```
+
+`ssh-add -l` should then list the key; pushes work from any shell.

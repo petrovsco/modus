@@ -1,78 +1,85 @@
 {
-  "$schema": "./catalog.schema.md",
-  "version": 1,
-  "description": "Source of truth for /nest-init. Each entry is an opt-in, reusable agent config. `scope` = where it installs (project = the current repo's .claude; global = ~/.claude). `recommendWhen` lets /nest-init pre-check relevant items after sniffing the project.",
+  "version": 2,
+  "description": "Source of truth for /modus:init. Each entry is an opt-in config. category: plugin = enable via enabledPlugins; rule = one @import line in the project CLAUDE.md (synced by the core modus plugin); settings/mcp/environment/convention = merged or applied per the install steps. `scope` = where it lands (project | global | machine). `recommendWhen` lets /modus:init pre-check relevant items after sniffing the project.",
   "entries": [
     {
-      "id": "session-wrap-up",
-      "title": "Session context wrap-up protocol",
-      "category": "rule",
+      "id": "session-flow",
+      "title": "session-flow plugin (context guard + memory nudge + /roadmap)",
+      "category": "plugin",
       "scope": "project",
-      "summary": "CLAUDE.md protocol: work in atomic build-passing units, checkpoint each, and hand off remaining scope to a roadmap item when the context window fills.",
-      "assets": ["configs/rules/session-wrap-up.md"],
+      "summary": "PostToolUse context-budget guard (wrap-up nudge at ~180k/~195k, zero model tokens), a memory-review nudge after each git commit, and the /roadmap command over docs/roadmap/ task briefs.",
+      "assets": ["plugins/session-flow"],
       "install": [
-        "Append the body of configs/rules/session-wrap-up.md into the project's CLAUDE.md (create CLAUDE.md if absent)."
+        "Merge {\"enabledPlugins\": {\"session-flow@modus\": true}} into <project>/.claude/settings.local.json (or settings.json to commit the choice).",
+        "Create the docs/roadmap/ directory (where task briefs live).",
+        "Remove legacy copies if present: .claude/hooks/context-guard.mjs, .claude/commands/roadmap.md, and the matching hook entries in settings.local.json.",
+        "Restart the session so the plugin loads."
       ],
       "recommendWhen": "Project has a build + commit workflow and sessions get long.",
-      "dependsOn": ["context-guard-hook", "roadmap-command"],
-      "requiresSecret": false
-    },
-    {
-      "id": "context-guard-hook",
-      "title": "Context-budget wrap-up guard (hook)",
-      "category": "hook",
-      "scope": "project",
-      "summary": "PostToolUse hook that watches context-window occupancy and injects a wrap-up nudge at soft/hard thresholds. Zero model tokens.",
-      "assets": ["configs/hooks/context-guard.mjs", "configs/hooks/settings.hooks.json"],
-      "install": [
-        "Copy configs/hooks/context-guard.mjs to <project>/.claude/hooks/context-guard.mjs",
-        "Merge the context-guard PostToolUse entry from configs/hooks/settings.hooks.json into <project>/.claude/settings.local.json, replacing the command path with the real absolute path to the copied hook."
-      ],
-      "recommendWhen": "Always useful; strongest when paired with session-wrap-up.",
       "dependsOn": ["session-wrap-up"],
       "requiresSecret": false
     },
     {
-      "id": "memory-after-commit-hook",
-      "title": "Memory review after commit (hook)",
-      "category": "hook",
+      "id": "visual-iteration",
+      "title": "visual-iteration plugin (Playwright MCP + workflow skill)",
+      "category": "plugin",
       "scope": "project",
-      "summary": "PostToolUse (Bash) hook: after any `git commit`, nudges the agent to review the session and update auto-memory.",
-      "assets": ["configs/hooks/settings.hooks.json"],
+      "summary": "Playwright MCP server plus the visual-iteration skill: serve scratch HTML/SVG over HTTP, iterate with element screenshots, clean up after.",
+      "assets": ["plugins/visual-iteration"],
       "install": [
-        "Merge the memory-review-after-commit PostToolUse entry from configs/hooks/settings.hooks.json into <project>/.claude/settings.local.json."
+        "Merge {\"enabledPlugins\": {\"visual-iteration@modus\": true}} into <project>/.claude/settings.local.json.",
+        "Remove a legacy playwright block from <project>/.mcp.json if the plugin now provides it.",
+        "Restart the session so the plugin loads."
       ],
-      "recommendWhen": "Project is a git repo and you use the auto-memory protocol.",
-      "dependsOn": ["memory-protocol"],
-      "requiresSecret": false
-    },
-    {
-      "id": "roadmap-command",
-      "title": "Roadmap command + docs/roadmap convention",
-      "category": "command",
-      "scope": "project",
-      "summary": "/roadmap slash command that lists kickoff-ready task briefs with stable, deterministic IDs (one markdown file per task under docs/roadmap/).",
-      "assets": ["configs/commands/roadmap.md"],
-      "install": [
-        "Copy configs/commands/roadmap.md to <project>/.claude/commands/roadmap.md",
-        "Create the docs/roadmap/ directory (this is where task briefs live)."
-      ],
-      "recommendWhen": "Any project that accrues future-work briefs / needs clean session handoffs.",
+      "recommendWhen": "Web / UI projects, or anything with visual output to iterate on.",
       "dependsOn": [],
       "requiresSecret": false
     },
     {
-      "id": "memory-protocol",
-      "title": "Auto-memory protocol",
-      "category": "convention",
-      "scope": "global",
-      "summary": "File-based persistent memory kept outside the repo (~/.claude/projects/<slug>/memory/): one fact per file + a MEMORY.md index. Conventions for what to save and how.",
-      "assets": ["configs/memory/README.md"],
+      "id": "session-wrap-up",
+      "title": "Session context wrap-up protocol (house rule)",
+      "category": "rule",
+      "scope": "project",
+      "summary": "Work in atomic build-passing units, checkpoint each, and hand off remaining scope to a docs/roadmap/ brief when the context window fills.",
+      "assets": ["plugins/modus/rules/session-wrap-up.md"],
       "install": [
-        "This is a convention, not a copied file. Review configs/memory/README.md and follow it; the memory files are created on demand by the harness."
+        "Ensure the core modus plugin is enabled at user scope (it syncs rules to ~/.claude/modus/rules/).",
+        "Add to the project CLAUDE.md under '## House rules': @~/.claude/modus/rules/session-wrap-up.md",
+        "If the rule body is pasted in CLAUDE.md from the pre-plugin era, replace the pasted section with the import line."
       ],
-      "recommendWhen": "Any ongoing project where cross-session recall pays off.",
+      "recommendWhen": "Paired with the session-flow plugin; any repo with long build sessions.",
+      "dependsOn": ["session-flow"],
+      "requiresSecret": false
+    },
+    {
+      "id": "build-before-push",
+      "title": "Build (not just typecheck) before pushing (house rule)",
+      "category": "rule",
+      "scope": "project",
+      "summary": "Run the full build the deploy runs before committing/pushing.",
+      "assets": ["plugins/modus/rules/build-before-push.md"],
+      "install": [
+        "Ensure the core modus plugin is enabled at user scope.",
+        "Add to the project CLAUDE.md under '## House rules': @~/.claude/modus/rules/build-before-push.md"
+      ],
+      "recommendWhen": "Any project with a build/compile step that CI or the host runs.",
       "dependsOn": [],
+      "requiresSecret": false
+    },
+    {
+      "id": "direct-push",
+      "title": "Direct-to-main push + auto-checkpoint (house rule)",
+      "category": "rule",
+      "scope": "project",
+      "summary": "Push straight to main and auto commit+push finished, build-passing units without being asked. Opt-in per repo.",
+      "assets": ["plugins/modus/rules/direct-push.md"],
+      "install": [
+        "ONLY for solo/trunk-based repos — confirm with the user first.",
+        "Ensure the core modus plugin is enabled at user scope.",
+        "Add to the project CLAUDE.md under '## House rules': @~/.claude/modus/rules/direct-push.md"
+      ],
+      "recommendWhen": "Solo repos without PR review or protected branches. Confirm first.",
+      "dependsOn": ["build-before-push"],
       "requiresSecret": false
     },
     {
@@ -95,26 +102,12 @@
       "title": "Global agent settings (model / effort / notifications)",
       "category": "settings",
       "scope": "global",
-      "summary": "~/.claude/settings.json preferences: model=opus, effortLevel=xhigh, push notifications on background-agent completion.",
+      "summary": "~/.claude/settings.json preferences: model, effortLevel=xhigh, push notifications on background-agent completion.",
       "assets": ["configs/settings/global-settings.json"],
       "install": [
         "Merge the keys from configs/settings/global-settings.json into ~/.claude/settings.json."
       ],
       "recommendWhen": "Set once per machine (global). Skip if already configured to taste.",
-      "dependsOn": [],
-      "requiresSecret": false
-    },
-    {
-      "id": "mcp-playwright",
-      "title": "Playwright MCP server",
-      "category": "mcp",
-      "scope": "project",
-      "summary": "Browser automation + screenshots; powers the visual-iteration workflow. No secrets.",
-      "assets": ["configs/mcp/playwright.md"],
-      "install": [
-        "Add the playwright server block from configs/mcp/playwright.md to <project>/.mcp.json, pointing --output-dir at a folder in this project."
-      ],
-      "recommendWhen": "Web / UI projects, or anything with visual output to iterate on.",
       "dependsOn": [],
       "requiresSecret": false
     },
@@ -134,60 +127,33 @@
       "requiresSecret": true
     },
     {
-      "id": "visual-iteration",
-      "title": "Visual iteration workflow",
-      "category": "rule",
-      "scope": "project",
-      "summary": "Serve scratch HTML/SVG over HTTP (Playwright MCP blocks file://), take element screenshots to iterate, clean up scratch PNGs after.",
-      "assets": ["configs/rules/visual-iteration.md"],
-      "install": [
-        "Append the body of configs/rules/visual-iteration.md into the project's CLAUDE.md."
-      ],
-      "recommendWhen": "Projects with hand-tuned visuals (SVG, charts, custom components).",
-      "dependsOn": ["mcp-playwright"],
-      "requiresSecret": false
-    },
-    {
-      "id": "direct-push",
-      "title": "Direct-to-main push + auto-checkpoint",
-      "category": "rule",
-      "scope": "project",
-      "summary": "Push straight to main and auto commit+push finished, build-passing units without being asked. Opt-in per repo.",
-      "assets": ["configs/rules/direct-push.md"],
-      "install": [
-        "Append the body of configs/rules/direct-push.md into the project's CLAUDE.md — ONLY for solo/trunk-based repos."
-      ],
-      "recommendWhen": "Solo repos without PR review or protected branches. Confirm first.",
-      "dependsOn": ["build-before-push"],
-      "requiresSecret": false
-    },
-    {
-      "id": "build-before-push",
-      "title": "Build (not just typecheck) before pushing",
-      "category": "rule",
-      "scope": "project",
-      "summary": "Run the full build the deploy runs (not just a typecheck) before committing/pushing.",
-      "assets": ["configs/rules/build-before-push.md"],
-      "install": [
-        "Append the body of configs/rules/build-before-push.md into the project's CLAUDE.md."
-      ],
-      "recommendWhen": "Any project with a build/compile step that CI or the host runs.",
-      "dependsOn": [],
-      "requiresSecret": false
-    },
-    {
       "id": "git-ssh-windows",
       "title": "Git SSH push fix (Windows + Git Bash)",
       "category": "environment",
-      "scope": "global",
-      "summary": "Point git at Windows-native ssh.exe globally so SSH pushes from Git Bash work in every repo (the key is never the problem).",
+      "scope": "machine",
+      "summary": "Point git at Windows-native ssh.exe globally, and keep the OpenSSH agent service running with the key loaded, so SSH pushes work from every shell in every repo.",
       "assets": ["configs/environment/git-ssh-windows.md"],
       "install": [
         "Verify C:/WINDOWS/System32/OpenSSH/ssh.exe exists.",
         "Run: git config --global core.sshCommand \"C:/WINDOWS/System32/OpenSSH/ssh.exe\"",
-        "Drop any stale per-repo override: git config --local --unset core.sshCommand"
+        "Drop any stale per-repo override: git config --local --unset core.sshCommand",
+        "If pushes still hang: Set-Service ssh-agent -StartupType Automatic; Start-Service ssh-agent; ssh-add (type the key passphrase once)."
       ],
-      "recommendWhen": "Windows machine where SSH git pushes fail/hang from Git Bash. Set once per machine.",
+      "recommendWhen": "Windows machine where SSH git pushes fail/hang. Set once per machine.",
+      "dependsOn": [],
+      "requiresSecret": false
+    },
+    {
+      "id": "memory-protocol",
+      "title": "Auto-memory protocol",
+      "category": "convention",
+      "scope": "global",
+      "summary": "File-based persistent memory kept outside the repo (~/.claude/projects/<slug>/memory/): one fact per file + a MEMORY.md index. Conventions for what to save and how.",
+      "assets": ["configs/memory/README.md"],
+      "install": [
+        "This is a convention, not a copied file. Review configs/memory/README.md and follow it; the memory files are created on demand by the harness."
+      ],
+      "recommendWhen": "Any ongoing project where cross-session recall pays off.",
       "dependsOn": [],
       "requiresSecret": false
     }

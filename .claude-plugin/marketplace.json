@@ -1,0 +1,27 @@
+{
+  "name": "modus",
+  "owner": {
+    "name": "Peter Shamatoff",
+    "email": "peter@shamatoff.com"
+  },
+  "metadata": {
+    "description": "A personal Claude Code marketplace — how Claude works across one developer's repos: session flow, house rules, workflows."
+  },
+  "plugins": [
+    {
+      "name": "modus",
+      "source": "./plugins/modus",
+      "description": "Core: the /modus:init and /modus:capture commands plus the house-rules sync (rules importable from ~/.claude/modus/rules/). Enable once at user scope."
+    },
+    {
+      "name": "session-flow",
+      "source": "./plugins/session-flow",
+      "description": "Context-budget wrap-up guard, memory-review-after-commit nudge, and the /roadmap command for kickoff-ready task briefs. Enable per project."
+    },
+    {
+      "name": "visual-iteration",
+      "source": "./plugins/visual-iteration",
+      "description": "Playwright MCP server + the visual-iteration skill: serve scratch HTML/SVG over HTTP, tune with element screenshots. Enable per project."
+    }
+  ]
+}
