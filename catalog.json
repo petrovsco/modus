@@ -83,6 +83,22 @@
       "requiresSecret": false
     },
     {
+      "id": "pending-work-in-roadmap",
+      "title": "Pending work lives in the roadmap (house rule)",
+      "category": "rule",
+      "scope": "project",
+      "summary": "Reference docs (doctrine, indexes, ADRs, READMEs) must not carry follow-ups. Every pending item is one file in docs/roadmap/, so /roadmap can actually see it.",
+      "assets": ["plugins/modus/rules/pending-work-in-roadmap.md"],
+      "install": [
+        "Ensure the core modus plugin is enabled at user scope (it syncs rules to ~/.claude/modus/rules/).",
+        "Add to the project CLAUDE.md under '## House rules': @~/.claude/modus/rules/pending-work-in-roadmap.md",
+        "If the repo's briefs do not live in docs/roadmap/, name the real directory in CLAUDE.md."
+      ],
+      "recommendWhen": "Any repo keeping kickoff briefs in docs/roadmap/; pairs with session-flow's /roadmap and session-wrap-up's handoff step.",
+      "dependsOn": ["session-wrap-up"],
+      "requiresSecret": false
+    },
+    {
       "id": "npm-permissions",
       "title": "Safe permission allowlist",
       "category": "settings",
