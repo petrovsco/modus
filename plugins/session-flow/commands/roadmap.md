@@ -23,8 +23,15 @@ not when the slug is renamed, not when the brief moves into `done/`. Never
 renumber a brief to close a gap — gaps are correct and expected.
 
 Do not derive IDs from sort order, position, or mtime. Read them off the
-filenames. A brief with no numeric prefix has no ID yet — see *Adopting the
-convention* below.
+filenames.
+
+**A `.md` file without a `NNN-` prefix is not a task.** The roadmap directory is
+allowed to hold folder furniture — a `README.md` describing the convention, a
+shared-context file the briefs all tell you to read first. Those are reference,
+not work: skip them everywhere in this command, never list them, and never
+assign them an ID. The only exception is a repo adopting the convention, where
+the *briefs* are genuinely unnumbered — see *Adopting the convention* below, and
+even there the furniture stays unnumbered.
 
 ## Allocating an ID for a new brief
 
@@ -78,8 +85,10 @@ Accept `7`, `07` and `007` as the same task.
 
 ## Adopting the convention
 
-In a repo whose briefs are not numbered yet, seed the IDs **once**, in the order
-the briefs were created, so that a low ID means an old task:
+First separate the briefs from the furniture: a `README.md`, an index, or a
+shared-context file stays where it is and stays unnumbered. Then seed IDs for the
+briefs **once**, in the order they were created, so that a low ID means an old
+task:
 
 ```bash
 for f in $(ls docs/roadmap/*.md docs/roadmap/done/*.md); do
@@ -87,7 +96,17 @@ for f in $(ls docs/roadmap/*.md docs/roadmap/done/*.md); do
 done | sort -t'|' -k1,1n
 ```
 
-Number that list from 1 and `git mv` each file to `NNN-<slug>.md`. Then repoint
+**If the briefs already carry a sequence of their own** — `u3`, `u4`, `u5` in the
+filenames, phase numbers, anything the user says out loud — adopt *those* numbers
+as the IDs instead of renumbering from 1. The point of the ID is that it matches
+what is already in the user's head; a scheme that renames "U9" to "task 7" costs
+more than it fixes. Units already finished and gone simply leave their numbers
+unused, which is what gaps are for.
+
+Where there is no git history to sort by (an untracked docs folder), fall back to
+mtime, and say so — mtime is a weaker signal and the user may want to correct it.
+
+Number that list and `git mv` each file to `NNN-<slug>.md`. Then repoint
 every reference that named the old filename — links in other briefs, in the
 project's reference docs, and in source-code comments — and verify no markdown
 link is left dangling. Rewrite those references with a script that reads and

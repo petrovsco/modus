@@ -4,6 +4,10 @@ One place holds what is left to do: `docs/roadmap/` (adjust the path per repo).
 One file per item, named `NNN-<slug>.md`, starting `# Roadmap: <title>` with a
 `**Status:**` line. Finished briefs move to `docs/roadmap/done/`.
 
+A `.md` file in that directory *without* a number — a README explaining the
+convention, a shared-context doc the briefs tell you to read first — is
+furniture, not a task. It keeps its plain name and `/roadmap` ignores it.
+
 **The number in the filename is the task ID.** It is allocated once, when the
 brief is created, and never changes — not when the title is rewritten, not when
 the slug is renamed, not when the brief moves into `done/`. Refer to work by that
