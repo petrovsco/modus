@@ -20,11 +20,13 @@ hard one (~195k). The user may also just say "wrap up." When the signal arrives:
 2. **Checkpoint it**: run the project's full build (must pass), then commit and
    push per the repo's convention.
 3. **Hand off the remainder.** Write the remaining scope as a kickoff-ready
-   brief in `docs/roadmap/` (one file per item; the slug/filename is its ID).
-   Include what's done, where it left off, and what's next, so a fresh session
-   resumes cheaply.
+   brief in `docs/roadmap/`, one file per item, named `NNN-<slug>.md`. Allocate
+   the next free ID: the highest number across `docs/roadmap/` and
+   `docs/roadmap/done/`, plus one. Include what's done, where it left off, and
+   what's next, so a fresh session resumes cheaply.
 4. **Report the roadmap item's ID** to the user so they can run it in a new
-   session (e.g. `/roadmap <id>`).
+   session (e.g. `/roadmap 7`). That number is permanent — it stays with the
+   brief through renames and through the move into `done/`.
 
 Thresholds are env-overridable (`CTX_GUARD_SOFT`, `CTX_GUARD_HARD`); review or
 disable the guard via `/hooks`.

@@ -7,11 +7,12 @@
       "title": "session-flow plugin (context guard + memory nudge + /roadmap)",
       "category": "plugin",
       "scope": "project",
-      "summary": "PostToolUse context-budget guard (wrap-up nudge at ~180k/~195k, zero model tokens), a memory-review nudge after each git commit, and the /roadmap command over docs/roadmap/ task briefs.",
+      "summary": "PostToolUse context-budget guard (wrap-up nudge at ~180k/~195k, zero model tokens), a memory-review nudge after each git commit, and the /roadmap command over docs/roadmap/ task briefs — each brief named NNN-<slug>.md, where the number is a permanent task ID that survives renames and the move into done/.",
       "assets": ["plugins/session-flow"],
       "install": [
         "Merge {\"enabledPlugins\": {\"session-flow@modus\": true}} into <project>/.claude/settings.local.json (or settings.json to commit the choice).",
-        "Create the docs/roadmap/ directory (where task briefs live).",
+        "Create docs/roadmap/ and docs/roadmap/done/ (where task briefs live, and where finished ones retire keeping their ID).",
+        "If the repo already has un-numbered briefs, seed the IDs once in creation order per the 'Adopting the convention' section of the /roadmap command.",
         "Remove legacy copies if present: .claude/hooks/context-guard.mjs, .claude/commands/roadmap.md, and the matching hook entries in settings.local.json.",
         "Restart the session so the plugin loads."
       ],
@@ -87,7 +88,7 @@
       "title": "Pending work lives in the roadmap (house rule)",
       "category": "rule",
       "scope": "project",
-      "summary": "Reference docs (doctrine, indexes, ADRs, READMEs) must not carry follow-ups. Every pending item is one file in docs/roadmap/, so /roadmap can actually see it.",
+      "summary": "Reference docs (doctrine, indexes, ADRs, READMEs) must not carry follow-ups. Every pending item is one file in docs/roadmap/ named NNN-<slug>.md, so /roadmap can see it and the number is a stable handle for it.",
       "assets": ["plugins/modus/rules/pending-work-in-roadmap.md"],
       "install": [
         "Ensure the core modus plugin is enabled at user scope (it syncs rules to ~/.claude/modus/rules/).",

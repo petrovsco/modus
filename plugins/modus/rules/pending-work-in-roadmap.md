@@ -1,8 +1,22 @@
 ## Pending work lives in the roadmap
 
 One place holds what is left to do: `docs/roadmap/` (adjust the path per repo).
-One file per item, starting `# Roadmap: <title>` with a `**Status:**` line —
-that is what `/roadmap` reads to assign stable IDs.
+One file per item, named `NNN-<slug>.md`, starting `# Roadmap: <title>` with a
+`**Status:**` line. Finished briefs move to `docs/roadmap/done/`.
+
+**The number in the filename is the task ID.** It is allocated once, when the
+brief is created, and never changes — not when the title is rewritten, not when
+the slug is renamed, not when the brief moves into `done/`. Refer to work by that
+number ("task 7"), because it is the only handle that survives the file changing
+underneath it. An ID derived from position in a sorted list is not an ID: it
+silently repoints at a different task the next time a brief is added or renamed,
+and every note, commit message and conversation that used it is now wrong.
+
+To allocate one: take the highest number across `docs/roadmap/` **and**
+`docs/roadmap/done/`, add one, pad to three digits. Never reuse a number and
+never renumber to close a gap — gaps are the record of retired work. A brief that
+is finished or abandoned is *moved into `done/`*, never deleted, so the count
+keeps climbing past everything that has ever been on the roadmap.
 
 **Reference docs must not carry future work.** A doctrine, an index, an ADR, a
 README states what *is* and why. The moment one grows a "proposed edit",
@@ -12,8 +26,9 @@ where work goes to die: nobody re-reads a reference doc looking for a task.
 
 When you notice one:
 
-1. **Move the item into a roadmap file** — the whole argument, not a summary, so
-   the brief is kickoff-ready on its own and the reader never needs both files.
+1. **Move the item into a roadmap file** — allocate the next ID, and carry the
+   whole argument, not a summary, so the brief is kickoff-ready on its own and
+   the reader never needs both files.
 2. **Leave a one-line pointer** where it was, naming the brief.
 3. **Repoint anything that referenced the old location.**
 
