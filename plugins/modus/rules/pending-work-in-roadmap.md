@@ -2,7 +2,7 @@
 
 One place holds what is left to do: `docs/roadmap/` (adjust the path per repo).
 One file per item, named `NNN-<slug>.md`, starting `# Roadmap: <title>` with a
-`**Status:**` line. Finished briefs move to `docs/roadmap/done/`.
+`**Label:**` line and a `**Status:**` line. Finished briefs move to `docs/roadmap/done/`.
 
 A `.md` file in that directory *without* a number — a README explaining the
 convention, a shared-context doc the briefs tell you to read first — is
@@ -21,6 +21,22 @@ To allocate one: take the highest number across `docs/roadmap/` **and**
 never renumber to close a gap — gaps are the record of retired work. A brief that
 is finished or abandoned is *moved into `done/`*, never deleted, so the count
 keeps climbing past everything that has ever been on the roadmap.
+
+**Every active brief carries a label.** A `**Label:**` line sits directly above
+`**Status:**`, holding exactly one of four values:
+
+- **bug** — something already shipped behaves wrongly; the brief restores the
+  intended behavior.
+- **infra** — structure, tooling, process, or platform work (auth, migrations,
+  build tooling, the process docs themselves). Not itself a user-visible change.
+- **feature** — committed product work: something the user will see or use.
+- **backlog** — an idea not yet committed to. Parked until the context or the
+  decision that makes it kickoff-ready arrives; then relabel it in place
+  (usually to feature).
+
+The label names the kind of work; the `**Status:**` line tracks where it
+stands. Give every new brief its label at creation. A brief that predates the
+convention just lacks the line — add one when you next touch it.
 
 **Reference docs must not carry future work.** A doctrine, an index, an ADR, a
 README states what *is* and why. The moment one grows a "proposed edit",

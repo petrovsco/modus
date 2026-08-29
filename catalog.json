@@ -88,7 +88,7 @@
       "title": "Pending work lives in the roadmap (house rule)",
       "category": "rule",
       "scope": "project",
-      "summary": "Reference docs (doctrine, indexes, ADRs, READMEs) must not carry follow-ups. Every pending item is one file in docs/roadmap/ named NNN-<slug>.md, so /roadmap can see it and the number is a stable handle for it.",
+      "summary": "Reference docs (doctrine, indexes, ADRs, READMEs) must not carry follow-ups. Every pending item is one file in docs/roadmap/ named NNN-<slug>.md, so /roadmap can see it and the number is a stable handle for it. Every active brief carries a **Label:** line (bug / infra / feature / backlog) above its **Status:** line.",
       "assets": ["plugins/modus/rules/pending-work-in-roadmap.md"],
       "install": [
         "Ensure the core modus plugin is enabled at user scope (it syncs rules to ~/.claude/modus/rules/).",

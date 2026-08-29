@@ -7,7 +7,8 @@ allowed-tools: Glob, Read
 Roadmap tasks are one markdown file per item in `docs/roadmap/` (adjust this path
 if your project keeps them elsewhere). Finished briefs move to
 `docs/roadmap/done/` and **keep their ID**. Each file starts with
-`# Roadmap: <title>` and a `**Status:**` line, followed by the brief.
+`# Roadmap: <title>`, then a `**Label:**` line (bug / infra / feature /
+backlog) and a `**Status:**` line, followed by the brief.
 
 ## The ID is the number in the filename
 
@@ -48,14 +49,16 @@ directory listing and a retired ID can never be handed to a different task.
 
 **If `$ARGUMENTS` is empty → list mode.**
 
-Read each brief in `docs/roadmap/*.md` (just enough: title, `**Status:**`, and
-the Goal / opening section) and print a table sorted by ID:
+Read each brief in `docs/roadmap/*.md` (just enough: title, `**Label:**`,
+`**Status:**`, and the Goal / opening section) and print a table sorted by ID:
 
-| ID | Task | Status | Summary |
-|----|------|--------|---------|
+| ID | Task | Label | Status | Summary |
+|----|------|-------|--------|---------|
 
 - **ID** — the filename prefix with leading zeros dropped (`007-` → `7`).
 - **Task** — the title after `# Roadmap:`.
+- **Label** — the value from the `**Label:**` line (bug / infra / feature /
+  backlog); `—` for a brief that predates the convention.
 - **Status** — the value from the `**Status:**` line (e.g. planned, TBC).
 - **Summary** — one sentence, from the Goal / opening context.
 
