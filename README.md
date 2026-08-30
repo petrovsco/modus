@@ -29,11 +29,14 @@ modus/
 │   ├── session-flow/                 ← per-project: context guard, memory nudge, /roadmap
 │   └── visual-iteration/             ← per-project: Playwright MCP + workflow skill
 ├── catalog.json                      ← source of truth read by /modus:init
-└── configs/                          ← what plugins can't carry:
-    ├── settings/                     ←   permission + global settings fragments
-    ├── mcp/                          ←   secret-bearing MCP templates (placeholders!)
-    ├── environment/                  ←   machine-level fixes (git-ssh-windows)
-    └── memory/                       ←   auto-memory convention
+├── configs/                          ← what plugins can't carry:
+│   ├── settings/                     ←   permission + global settings fragments
+│   ├── mcp/                          ←   secret-bearing MCP templates (placeholders!)
+│   ├── environment/                  ←   machine-level fixes (git-ssh-windows)
+│   └── memory/                       ←   auto-memory convention
+├── docs/roadmap/                     ← this repo's own task briefs (NNN-<slug>.md)
+└── tools/
+    └── roadmap-board/                ← local web board over every project's docs/roadmap/
 ```
 
 ## One-time setup (per machine)
@@ -99,6 +102,13 @@ session-flow: context guard ──fires──▶ session-wrap-up rule ──hand
                                                                                           ▼
                                                                              auto-memory (memory-protocol)
 ```
+
+## Tools
+
+`tools/roadmap-board/` — a local, read-only JIRA/Trello-style web board over
+every project's `docs/roadmap/` briefs (ticket IDs, labels, states, full-brief
+view). Run `python3 tools/roadmap-board/server.py` → http://127.0.0.1:4830.
+See its README; repo-URL sources are roadmap task 1.
 
 ## Secrets
 

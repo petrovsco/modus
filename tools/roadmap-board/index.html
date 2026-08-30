@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Roadmap Board</title>
+<style>
+:root{
+  --bg:#f4f5f7; --panel:#ffffff; --panel2:#eceef1; --text:#1c1e21; --muted:#6b7280;
+  --line:#e3e5e8; --accent:#4f6ef7;
+  --shadow:0 1px 2px rgba(16,20,30,.06), 0 4px 14px rgba(16,20,30,.05);
+  --bug:#e5484d; --infra:#8e4ec6; --feature:#2f9e63; --backlog:#8b8d98;
+  --live:#1f9d55; --stale:#c2820b;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#141519; --panel:#1e2026; --panel2:#25272e; --text:#e8eaed; --muted:#9aa0aa;
+    --line:#2c2f37; --accent:#7b93ff; --shadow:0 1px 2px rgba(0,0,0,.4);
+    --feature:#3fbf7f; --bug:#f2555a; --live:#40c47c; --stale:#e0a83a;
+  }
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+
+.top{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;padding:14px 18px 6px}
+.brand{display:flex;align-items:baseline;gap:10px}
+.brand .logo{width:10px;height:10px;border-radius:3px;background:var(--accent);display:inline-block;transform:translateY(-1px)}
+.brand h1{font-size:17px;margin:0;letter-spacing:.2px}
+#stats{color:var(--muted);font-size:12px}
+.controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+input[type=search],select,button{font:inherit;color:var(--text);background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:6px 10px}
+input[type=search]{width:230px}
+button{cursor:pointer}
+button:hover{border-color:var(--accent)}
+.seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{border:0;border-radius:0}
+.seg button.on{background:var(--accent);color:#fff}
+.chk{display:flex;gap:6px;align-items:center;color:var(--muted);user-select:none;cursor:pointer}
+
+.filters{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:8px 18px 4px}
+.filters .sep{width:1px;height:18px;background:var(--line)}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:var(--panel);border:1px solid var(--line);color:var(--text);font-size:12.5px}
+.chip.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.chip .cnt{color:var(--muted);font-size:11px}
+.pdot{width:8px;height:8px;border-radius:50%;display:inline-block;flex:none}
+
+main{padding:10px 18px 24px}
+.board{display:flex;gap:12px;align-items:flex-start;overflow-x:auto;padding-bottom:12px}
+.col{background:var(--panel2);border:1px solid var(--line);border-radius:12px;min-width:282px;width:282px;flex:none;max-height:calc(100vh - 175px);display:flex;flex-direction:column}
+.col-head{display:flex;align-items:center;gap:8px;padding:10px 12px;font-weight:600;font-size:13px;border-bottom:1px solid var(--line)}
+.col-head .cnt{margin-left:auto;color:var(--muted);font-weight:500;font-size:12px;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:1px 8px}
+.col-body{padding:10px;display:flex;flex-direction:column;gap:8px;overflow-y:auto}
+
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px;cursor:pointer;box-shadow:var(--shadow);transition:transform .06s ease,border-color .06s ease}
+.card:hover{transform:translateY(-1px);border-color:var(--accent)}
+.card.is-done{opacity:.72}
+.card-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px}
+.ref{font-family:ui-monospace,"Cascadia Code",Consolas,monospace;font-size:12px;color:var(--muted)}
+.ref.big{font-size:14px;color:var(--text)}
+.card-title{font-size:13.5px;font-weight:600;margin:0 0 6px;line-height:1.35}
+.card-status{color:var(--muted);font-size:12px;margin-bottom:8px}
+.card-foot{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:12px}
+.card.is-active{border-left:3px solid var(--live);padding-left:9px}
+.card.is-stale{border-left:3px solid var(--stale);padding-left:9px}
+.act{display:flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;margin-bottom:2px}
+.act.live{color:var(--live)}
+.act.stale{color:var(--stale);font-weight:500}
+.act-msg{font-size:11.5px;color:var(--muted);margin-bottom:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.adot{width:7px;height:7px;border-radius:50%;background:var(--live);flex:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--live) 22%,transparent)}
+.why{font-size:10.5px;font-weight:600;letter-spacing:.2px;text-transform:uppercase;color:var(--muted);border:1px solid var(--line);border-radius:4px;padding:0 4px;cursor:help}
+.why.stale{color:var(--stale);border-color:color-mix(in srgb,var(--stale) 40%,var(--line))}
+.statepill.live{border-color:var(--live);color:var(--live)}
+.statepill.stale{border-color:var(--stale);color:var(--stale)}
+.m-act{display:flex;align-items:center;gap:6px;flex-wrap:wrap;color:var(--muted);font-size:12px;margin:-4px 0 12px}
+.m-act:empty{display:none}
+
+.lchip{display:inline-flex;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:600;letter-spacing:.2px;white-space:nowrap}
+.lbl-bug{background:color-mix(in srgb,var(--bug) 14%,transparent);color:var(--bug)}
+.lbl-infra{background:color-mix(in srgb,var(--infra) 14%,transparent);color:var(--infra)}
+.lbl-feature{background:color-mix(in srgb,var(--feature) 16%,transparent);color:var(--feature)}
+.lbl-backlog{background:color-mix(in srgb,var(--backlog) 16%,transparent);color:var(--backlog)}
+.lbl-none{background:transparent;border:1px dashed var(--line);color:var(--muted);font-weight:500}
+.chip.lbl-bug,.chip.lbl-infra,.chip.lbl-feature,.chip.lbl-backlog{font-weight:600}
+
+.empty{color:var(--muted);text-align:center;padding:10px;font-size:12.5px}
+.empty.big{padding:60px 0;font-size:14px;width:100%}
+
+.listwrap{overflow-x:auto;background:var(--panel);border:1px solid var(--line);border-radius:12px}
+table.list{width:100%;border-collapse:collapse;font-size:13px}
+table.list th{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);color:var(--muted);font-size:12px;font-weight:600;white-space:nowrap}
+table.list td{padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+table.list tr:last-child td{border-bottom:0}
+table.list tbody tr{cursor:pointer}
+table.list tbody tr:hover td{background:color-mix(in srgb,var(--accent) 6%,transparent)}
+table.list tr.is-done{opacity:.65}
+table.list .sub{color:var(--muted);font-size:12px;margin-top:2px}
+table.list td .pdot{margin-right:6px}
+.nowrap{white-space:nowrap}
+
+#modal{position:fixed;inset:0;background:rgba(10,12,16,.45);backdrop-filter:blur(2px);display:flex;align-items:flex-start;justify-content:center;padding:5vh 16px;z-index:50}
+.m-panel{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:14px;max-width:860px;width:100%;max-height:88vh;overflow-y:auto;padding:22px 26px;box-shadow:0 10px 40px rgba(0,0,0,.3)}
+.m-close{position:absolute;top:12px;right:14px;border:0;background:transparent;font-size:20px;color:var(--muted);padding:4px 10px;line-height:1}
+.m-close:hover{color:var(--text)}
+.m-meta{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:8px;color:var(--muted);font-size:12.5px}
+.mproj{display:inline-flex;align-items:center;gap:6px}
+.statepill{border:1px solid var(--line);border-radius:999px;padding:2px 9px;font-size:11px}
+#m-title{margin:0 0 6px;font-size:20px;line-height:1.3;padding-right:28px}
+.m-file{font-family:ui-monospace,"Cascadia Code",Consolas,monospace;font-size:11.5px;color:var(--muted);margin-bottom:14px;word-break:break-all}
+
+.md{font-size:13.5px}
+.md h1,.md h2{font-size:16px;margin:20px 0 8px;padding-top:12px;border-top:1px solid var(--line)}
+.md h3{font-size:14px;margin:16px 0 6px}
+.md h4,.md h5,.md h6{font-size:13px;margin:14px 0 6px}
+.md p{margin:8px 0}
+.md pre{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:10px 12px;overflow-x:auto;font-size:12px;line-height:1.5}
+.md code{font-family:ui-monospace,"Cascadia Code",Consolas,monospace;font-size:.92em;background:var(--panel2);border-radius:4px;padding:1px 4px}
+.md pre code{background:transparent;padding:0}
+.md blockquote{border-left:3px solid var(--accent);margin:10px 0;padding:2px 12px;color:var(--muted)}
+.md ul,.md ol{margin:8px 0;padding-left:22px}
+.md li{margin:3px 0}
+.md hr{border:0;border-top:1px solid var(--line);margin:14px 0}
+.md a{color:var(--accent)}
+.md .tbl{overflow-x:auto}
+.md table{border-collapse:collapse;margin:10px 0;font-size:12.5px}
+.md th,.md td{border:1px solid var(--line);padding:5px 9px;text-align:left}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="brand">
+    <span class="logo"></span>
+    <h1>Roadmap Board</h1>
+    <span id="stats"></span>
+  </div>
+  <div class="controls">
+    <input id="q" type="search" placeholder="Search title, status, body, #id…">
+    <select id="group" title="Group columns by">
+      <option value="state" selected>Group: state</option>
+      <option value="label">Group: label</option>
+      <option value="project">Group: project</option>
+    </select>
+    <div class="seg" id="view">
+      <button type="button" data-view="board" class="on">Board</button>
+      <button type="button" data-view="list">List</button>
+    </div>
+    <label class="chk"><input type="checkbox" id="showDone" checked> done</label>
+    <button id="refresh" type="button" title="Re-scan the roadmap folders">&#x21bb; Refresh</button>
+  </div>
+</header>
+
+<div class="filters">
+  <div id="projChips" class="chips"></div>
+  <div class="sep"></div>
+  <div id="labelChips" class="chips"></div>
+</div>
+
+<main id="main"></main>
+
+<div id="modal" hidden>
+  <div class="m-panel">
+    <button class="m-close" type="button" title="Close">&times;</button>
+    <div class="m-meta">
+      <span id="m-ref" class="ref big"></span>
+      <span id="m-proj" class="mproj"></span>
+      <span id="m-label"></span>
+      <span id="m-state" class="statepill"></span>
+    </div>
+    <h2 id="m-title"></h2>
+    <div id="m-act" class="m-act"></div>
+    <div id="m-file" class="m-file"></div>
+    <div id="m-body" class="md"></div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
