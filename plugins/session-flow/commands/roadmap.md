@@ -8,7 +8,14 @@ Roadmap tasks are one markdown file per item in `docs/roadmap/` (adjust this pat
 if your project keeps them elsewhere). Finished briefs move to
 `docs/roadmap/done/` and **keep their ID**. Each file starts with
 `# Roadmap: <title>`, then a `**Label:**` line (bug / infra / feature /
-backlog) and a `**Status:**` line, followed by the brief.
+backlog), a `**Status:**` line, and an optional `**Depends:**` line — then the
+brief.
+
+The `**Status:**` line **starts with one of five keywords**, then an em dash and
+a sentence: `backlog` (not committed to yet) · `planned` (committed and
+kickoff-ready) · `in progress` · `blocked` (something outside the brief must
+happen first) · `done`. `**Depends:**` lists the task IDs that must land first —
+hard blockers only, omitted when there are none.
 
 ## The ID is the number in the filename
 
@@ -59,7 +66,8 @@ Read each brief in `docs/roadmap/*.md` (just enough: title, `**Label:**`,
 - **Task** — the title after `# Roadmap:`.
 - **Label** — the value from the `**Label:**` line (bug / infra / feature /
   backlog); `—` for a brief that predates the convention.
-- **Status** — the value from the `**Status:**` line (e.g. planned, TBC).
+- **Status** — the keyword from the `**Status:**` line (backlog / planned /
+  in progress / blocked), plus its `**Depends:**` IDs if it has any.
 - **Summary** — one sentence, from the Goal / opening context.
 
 Then one closing line. The done briefs do not need reading — their filenames

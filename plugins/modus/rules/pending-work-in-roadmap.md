@@ -38,6 +38,55 @@ The label names the kind of work; the `**Status:**` line tracks where it
 stands. Give every new brief its label at creation. A brief that predates the
 convention just lacks the line — add one when you next touch it.
 
+**The `**Status:**` line starts with one of five words.** Everything after the
+em dash is for a person; the first word is what tooling reads.
+
+| Keyword | Means |
+|---|---|
+| `backlog` | not committed to yet; it needs a decision or more context |
+| `planned` | committed and kickoff-ready; nobody is working on it |
+| `in progress` | someone is working on it now |
+| `blocked` | committed, but something outside the brief must happen first |
+| `done` | finished — the file lives in `done/` |
+
+Then an em dash and **one or two sentences** on where it actually stands. Not
+three paragraphs: a status line that has grown into a changelog is unreadable to
+both people and tools, and it is the first sign a brief has stopped being
+maintained. Long-running briefs keep their history in a `## Progress log`
+section of dated bullets right after the header instead.
+
+**Close on evidence, not on feeling.** Write each item in a brief's
+`## Acceptance` section as a `- [ ]` checkbox and tick it when it is true. All
+boxes ticked means the brief is `done` and moves to `done/`; an open box means it
+is not done, however long ago it started. Without this, briefs drift — a brief
+saying "in progress" for six weeks whose work shipped in week one is worse than
+no brief, because it makes the whole list untrustworthy.
+
+**A new brief declares where it sits in the running order.** Ordering is not a
+separate planning artefact; it falls out of one optional header line:
+
+```markdown
+**Depends:** 018, 019
+```
+
+Hard blockers only, by task ID. A dependency parks the brief behind another one,
+so list only what genuinely parks it — a soft overlap ("check this doesn't fork
+the same model") is prose, not a dependency. Omit the line when nothing blocks
+it. Dependencies on a task already in `done/` are ignored, so a brief never has
+to be edited when its blocker lands.
+
+Answer three questions when you create a brief, and write the answers into the
+header:
+
+1. **What has to land first?** → the `**Depends:**` line.
+2. **Are we committed to this?** → `planned` if yes, `backlog` if it still needs
+   a decision. "Committed" is a real bar: if nobody would start it this month,
+   it is backlog, and putting it in planned only makes the planned column
+   meaningless.
+3. **What does it unblock?** → if the answer is an existing brief, add
+   `**Depends:** <this id>` to *that* brief. A dependency is one edge and it has
+   two ends; recording it on only one leaves the order wrong.
+
 **Reference docs must not carry future work.** A doctrine, an index, an ADR, a
 README states what *is* and why. The moment one grows a "proposed edit",
 "follow-up", "next step", "TODO", or "needs a brief", that item has escaped

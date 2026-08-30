@@ -75,6 +75,42 @@ main{padding:10px 18px 24px}
 .statepill.stale{border-color:var(--stale);color:var(--stale)}
 .m-act{display:flex;align-items:center;gap:6px;flex-wrap:wrap;color:var(--muted);font-size:12px;margin:-4px 0 12px}
 .m-act:empty{display:none}
+.dim{opacity:.4}
+
+/* ---- AI Roadmap ---- */
+.roadmap{max-width:1080px;margin:0 auto;padding:18px 16px 60px}
+.rm-intro{color:var(--muted);font-size:13px;line-height:1.6;margin:0 0 20px;max-width:74ch}
+.rm-intro code{font-size:12px;background:var(--chip);padding:1px 4px;border-radius:4px}
+.rm-band{margin-bottom:26px}
+.rm-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;
+  border-bottom:1px solid var(--line);padding-bottom:6px;margin-bottom:10px}
+.rm-head h2{font-size:15px;margin:0;letter-spacing:.2px}
+.rm-head .cnt{font-size:11px;color:var(--muted);background:var(--chip);
+  border-radius:999px;padding:1px 7px}
+.rm-blurb{font-size:12px;color:var(--muted);flex:1 1 320px}
+.rm-now .rm-head h2{color:var(--live)}
+.rm-later .rm-head h2,.rm-someday .rm-head h2{color:var(--muted)}
+.rm-row{display:flex;align-items:flex-start;gap:12px;padding:10px 12px;cursor:pointer;
+  border:1px solid var(--line);border-radius:9px;background:var(--card);margin-bottom:6px}
+.rm-row:hover{border-color:var(--accent)}
+.rm-row.is-active{border-left:3px solid var(--live)}
+.rm-row.is-stale{border-left:3px solid var(--stale)}
+.rm-rank{flex:none;width:26px;height:26px;border-radius:50%;background:var(--chip);
+  color:var(--muted);font-size:12px;font-weight:700;display:flex;align-items:center;
+  justify-content:center}
+.rm-main{flex:1 1 auto;min-width:0}
+.rm-title{font-size:13.5px;font-weight:600;line-height:1.4}
+.rm-title .ref{color:var(--muted);font-weight:500;margin-right:2px}
+.rm-why{font-size:12px;color:var(--muted);margin-top:3px;line-height:1.5}
+.rm-side{flex:none;display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  justify-content:flex-end;max-width:280px;font-size:11.5px;color:var(--muted)}
+.rm-proj{font-size:11.5px}
+.rm-deps,.rm-unlocks{border:1px solid var(--line);border-radius:5px;padding:1px 5px}
+.dep{font-weight:600;margin-left:3px}
+.m-seq{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);
+  margin:-4px 0 10px}
+.m-seq:empty{display:none}
+@media (max-width:720px){.rm-side{max-width:none;width:100%;justify-content:flex-start}}
 
 .lchip{display:inline-flex;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:600;letter-spacing:.2px;white-space:nowrap}
 .lbl-bug{background:color-mix(in srgb,var(--bug) 14%,transparent);color:var(--bug)}
@@ -145,6 +181,7 @@ table.list td .pdot{margin-right:6px}
     <div class="seg" id="view">
       <button type="button" data-view="board" class="on">Board</button>
       <button type="button" data-view="list">List</button>
+      <button type="button" data-view="roadmap" title="A proposed order to do the open work in">AI Roadmap</button>
     </div>
     <label class="chk"><input type="checkbox" id="showDone" checked> done</label>
     <button id="refresh" type="button" title="Re-scan the roadmap folders">&#x21bb; Refresh</button>
@@ -169,6 +206,7 @@ table.list td .pdot{margin-right:6px}
       <span id="m-state" class="statepill"></span>
     </div>
     <h2 id="m-title"></h2>
+    <div id="m-seq" class="m-seq"></div>
     <div id="m-act" class="m-act"></div>
     <div id="m-file" class="m-file"></div>
     <div id="m-body" class="md"></div>

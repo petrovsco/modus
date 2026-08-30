@@ -68,6 +68,11 @@ files:
   The second one is what catches code commits like `feat(roadmap 019): …`.
 - A commit touching **8 or more briefs** is bookkeeping — a relabelling or
   renumbering sweep — and is dropped, so it cannot light up every card at once.
+- **Writing the brief is not doing the work.** A commit whose subject starts
+  `docs(...)` counts as brief activity; anything else counts as code. Only code
+  moves a card into In progress — without that rule a brief created this morning
+  showed up as in progress this afternoon. Doc-only activity still shows on the
+  card, labelled *the brief only, no code*.
 - A commit in the last **7 days** makes a task *active*. An active task in
   Backlog, Planned or Other is **moved into In progress** and marked `MOVED
   HERE`; its card shows the commit count, how long ago, and the last commit
@@ -82,6 +87,42 @@ roadmap folder, plus a `--grep` log with no diff at all) over a 90-day window,
 cached per repo `HEAD` — so **Refresh** only pays for it again after a commit
 lands. Pass `--no-git` to turn the whole thing off and let the `**Status:**`
 line stand alone.
+
+## The AI Roadmap — what to do next
+
+The board answers *where does everything stand*. With twenty open briefs that is
+not the question you actually have, which is **what do I do next**. The third
+view answers that one: every open task, in one proposed order, in four bands.
+
+| Band | Rule |
+|---|---|
+| **Now** | started, and nothing is in the way |
+| **Next** | committed, unblocked, nobody on it — where a fresh session starts |
+| **Later** | something has to land first; the blocker is named on the row |
+| **Someday** | not committed to; it needs a decision, not a slot |
+
+The band is a **rule**, not a score — a blocked task cannot outrank its way into
+Now. The score only orders rows *within* a band, and it is deliberately small
+enough to read off the row: state, label, observed code activity, how deep the
+task sits under its blockers, and how much other work it unblocks. Every row
+carries the sentence that explains its placement, because a running order you
+cannot interrogate is a running order nobody follows.
+
+**Nothing is written back to the briefs.** Like the board, it is a read.
+
+### `**Depends:**` — the one line that drives it
+
+Order comes first from dependencies you declare, in an optional header line:
+
+```markdown
+**Depends:** 018, 019
+```
+
+Hard blockers only, by task ID, within the same project. A dependency parks the
+brief in Later behind another one, so list what genuinely parks it — a soft
+overlap ("check this doesn't fork the same model") belongs in prose. Omit the
+line when there is nothing. Dependencies pointing at a task already in `done/`
+are ignored, so a brief does not have to be edited when its blocker lands.
 
 ## Not (yet) in scope
 

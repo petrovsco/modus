@@ -32,6 +32,7 @@ MIME = {".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=ut
 TASK_RE = re.compile(r"^(\d+)-(.+)\.md$", re.IGNORECASE)
 TITLE_RE = re.compile(r"^#\s+(?:Roadmap:\s*)?(.+?)\s*$")
 META_RE = re.compile(r"^\*\*([A-Za-z][A-Za-z0-9 /_-]{0,40}):\*\*\s*(.*)$")
+DEPENDS_RE = re.compile(r"\b0*(\d{1,4})\b")
 
 KNOWN_LABELS = ("bug", "infra", "feature", "backlog")
 
@@ -62,6 +63,12 @@ ACTIVE_DAYS = 7          # commits this recent => the task is being worked on no
 STALE_DAYS = 10          # declared in progress, nothing this recent => stalled
 GIT_WINDOW_DAYS = 90     # how far back to read the log
 SWEEP_BRIEFS = 8         # a commit touching this many briefs is bookkeeping, not work
+
+# Writing a brief is not doing the work it describes. Conventional-commit
+# subjects already say which is which, so use them: a `docs(...)` commit counts
+# as brief activity, anything else counts as code. Where the convention is not
+# followed the classification degrades to "code", which is the safer error.
+DOCS_RE = re.compile(r"^\s*docs?\b", re.I)
 
 # Subject-line attribution: "roadmap 018", "task 7", "brief #012". Deliberately
 # NOT a bare "#12" - that collides with PR and issue numbers.
@@ -165,17 +172,28 @@ def git_activity(rm: Path) -> dict:
     today = date.today()
     acts: dict = {}
     for c in commits.values():
+        docs = bool(DOCS_RE.match(c["subject"]))
         for tid in c["ids"]:
-            a = acts.setdefault(tid, {"commits": 0, "last": c["when"],
+            a = acts.setdefault(tid, {"commits": 0, "codeCommits": 0, "docCommits": 0,
+                                      "last": c["when"], "lastCode": None,
                                       "subject": c["subject"]})
             a["commits"] += 1
+            a["docCommits" if docs else "codeCommits"] += 1
             if c["when"] > a["last"]:        # ISO dates sort lexically
                 a["last"], a["subject"] = c["when"], c["subject"]
+            if not docs and (a["lastCode"] is None or c["when"] > a["lastCode"]):
+                a["lastCode"] = c["when"]
     for a in acts.values():
+        a["docsOnly"] = a["codeCommits"] == 0
         try:
             a["daysAgo"] = (today - datetime.strptime(a["last"], "%Y-%m-%d").date()).days
         except ValueError:
             a["daysAgo"] = None
+        try:
+            a["codeDaysAgo"] = (today - datetime.strptime(a["lastCode"], "%Y-%m-%d").date()).days \
+                if a["lastCode"] else None
+        except ValueError:
+            a["codeDaysAgo"] = None
 
     _GIT_CACHE[key] = acts
     return acts
@@ -267,8 +285,12 @@ def parse_brief(path: Path, done: bool) -> dict:
     if len(summary) > 240:
         summary = summary[:237].rstrip() + "…"
 
-    extra = {k2: v for k2, v in meta.items() if k2 not in ("Label", "Status")}
+    # **Depends:** 018, 019 - hard blockers only, by task id.
+    depends = sorted({int(x) for x in DEPENDS_RE.findall(meta.get("Depends", ""))})
+
+    extra = {k2: v for k2, v in meta.items() if k2 not in ("Label", "Status", "Depends")}
     return {
+        "depends": depends,
         "id": int(ref),
         "ref": ref,
         "file": path.name,
@@ -291,7 +313,11 @@ def apply_activity(task: dict, act: dict) -> None:
     if task["done"]:
         task["stale"] = False
         return
-    if task["active"] and task["state"] in ("planned", "backlog", "other"):
+    # Promotion needs *code*. Writing or re-labelling the brief is not doing the
+    # work it describes, and treating it as such put freshly-authored briefs in
+    # the In progress column on the day they were created.
+    code = bool(act) and not act.get("docsOnly")
+    if task["active"] and code and task["state"] in ("planned", "backlog", "other"):
         task["declaredState"] = task["state"]
         task["state"] = "inprogress"
         task["promoted"] = True
@@ -324,6 +350,141 @@ def scan_roadmap(rm: Path, name: str, key: str, use_git: bool = True) -> dict:
         "activeCount": sum(1 for t in tasks if t.get("active") and not t["done"]),
         "tasks": tasks,
     }
+
+
+# --------------------------------------------------------------------------
+# The AI Roadmap: what order to actually do this in.
+#
+# The board answers "where does everything stand". It does not answer "what
+# next", and with twenty open briefs that is the question that matters. So the
+# same data is read a second way, into four buckets - and every task carries
+# the sentence explaining why it landed where it did, because a running order
+# nobody can argue with is a running order nobody trusts.
+
+BUCKETS = ("now", "next", "later", "someday")
+
+# What each signal is worth. Deliberately small and legible: you should be able
+# to read a row's "why" and reconstruct its score.
+W_STATE = {"inprogress": 45, "planned": 25, "other": 10, "blocked": 5, "backlog": 5}
+W_LABEL = {"bug": 18, "feature": 10, "infra": 6, "backlog": 0}
+W_ACTIVE = 25            # code committed in the active window - someone is really on it
+W_ACTIVE_DOCS = 8        # only the brief was edited: thought about, not built
+W_STALE = -8             # declares in progress, nothing committed
+W_UNLOCK = 8             # per task transitively waiting on this one
+W_UNLOCK_CAP = 24
+W_DEPTH = -12            # per layer of blockers between here and startable
+
+
+def sequence(projects: list) -> list:
+    """Order every open task across all projects. Returns bucket dicts."""
+    tasks = {}               # (project, id) -> task
+    for p in projects:
+        for t in p["tasks"]:
+            t["_key"] = (p["key"], t["id"])
+            tasks[t["_key"]] = t
+
+    def deps_of(t):
+        """Resolve **Depends:** ids within the same project; drop what is done."""
+        pk = t["_key"][0]
+        out = []
+        for d in t.get("depends", []):
+            other = tasks.get((pk, d))
+            if other is not None and not other["done"]:
+                out.append(other)
+        return out
+
+    # Depth = how many layers of unfinished blockers sit under a task. Cycles
+    # cannot happen in a DAG of hand-written ids, but a typo can make one, so
+    # the walk carries its own visited set rather than trusting the data.
+    depth_memo = {}
+
+    def depth(t, seen=()):
+        k = t["_key"]
+        if k in depth_memo:
+            return depth_memo[k]
+        if k in seen:
+            return 0                      # a cycle: treat as startable, flag below
+        d = deps_of(t)
+        val = 0 if not d else 1 + max(depth(x, seen + (k,)) for x in d)
+        depth_memo[k] = val
+        return val
+
+    # Transitive dependents: how much work this one task is holding up.
+    dependents = {k: set() for k in tasks}
+    for k, t in tasks.items():
+        for d in deps_of(t):
+            dependents[d["_key"]].add(k)
+    changed = True
+    while changed:                        # cheap transitive closure; N is tiny
+        changed = False
+        for k in tasks:
+            grown = set(dependents[k])
+            for c in dependents[k]:
+                grown |= dependents[c]
+            grown.discard(k)
+            if grown != dependents[k]:
+                dependents[k], changed = grown, True
+
+    rows = []
+    for k, t in tasks.items():
+        if t["done"]:
+            continue
+        blockers = deps_of(t)
+        d = depth(t)
+        unlocks = len(dependents[k])
+        score = (W_STATE.get(t["state"], 10)
+                 + W_LABEL.get(t["label"], 0)
+                 + (0 if not t.get("active")
+                    else W_ACTIVE_DOCS if t["activity"].get("docsOnly") else W_ACTIVE)
+                 + (W_STALE if t.get("stale") else 0)
+                 + min(unlocks * W_UNLOCK, W_UNLOCK_CAP)
+                 + d * W_DEPTH)
+
+        # The bucket is a rule, not the score - the score only orders within it.
+        if blockers or t["state"] == "blocked":
+            bucket = "later"
+        elif t["state"] == "backlog" or t["label"] == "backlog":
+            bucket = "someday"
+        elif t["state"] == "inprogress" or (
+                t.get("active") and not t["activity"].get("docsOnly")):
+            bucket = "now"
+        else:
+            bucket = "next"
+
+        why = []
+        if t.get("active"):
+            a = t["activity"]
+            n = a["commits"]
+            why.append(f"{n} commit{'' if n == 1 else 's'} in the last {ACTIVE_DAYS} days"
+                       + (" — the brief only, no code" if a.get("docsOnly") else ""))
+        elif t.get("stale"):
+            why.append("declares in progress but nothing is committed")
+        if blockers:
+            why.append("waits on " + ", ".join(f"#{b['ref']}" for b in blockers))
+        elif t["state"] == "blocked":
+            why.append("blocked by something outside the brief")
+        if unlocks:
+            names = sorted(f"#{tasks[c]['ref']}" for c in dependents[k])
+            why.append(f"unblocks {', '.join(names)}")
+        if t["label"] == "bug":
+            why.append("a bug: shipped behaviour is wrong")
+        if not why:
+            why.append("committed and nothing is in its way"
+                       if bucket == "next" else "not committed to yet")
+
+        rows.append({
+            "project": t["_key"][0], "id": t["id"], "ref": t["ref"],
+            "bucket": bucket, "score": score, "depth": d, "unlocks": unlocks,
+            "blockedBy": [{"ref": b["ref"], "title": b["title"]} for b in blockers],
+            "why": "; ".join(why),
+        })
+
+    rows.sort(key=lambda r: (-r["score"], r["project"], r["id"]))
+    order = {b: i for i, b in enumerate(BUCKETS)}
+    rows.sort(key=lambda r: order[r["bucket"]])
+    for i, r in enumerate(rows, 1):
+        r["rank"] = i
+    return rows
 
 
 def looks_like_roadmap(d: Path) -> bool:
@@ -395,6 +556,7 @@ class BoardSource:
             "activeDays": ACTIVE_DAYS,
             "staleDays": STALE_DAYS,
             "projects": projects,
+            "sequence": sequence(projects),
         }
 
 

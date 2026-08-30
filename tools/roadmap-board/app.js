@@ -117,6 +117,16 @@ function byProjectAndId(a, b) {
   return a.project === b.project ? a.id - b.id : a.project.localeCompare(b.project);
 }
 
+/* Grouping and the done toggle only mean something on the board and the list —
+   the roadmap shows open work in one fixed order. */
+function syncControls() {
+  const rm = F.view === "roadmap";
+  $("#group").disabled = rm;
+  $("#showDone").disabled = rm;
+  $("#group").classList.toggle("dim", rm);
+  $("#showDone").closest("label").classList.toggle("dim", rm);
+}
+
 /* ---------- load + render ---------- */
 
 async function load() {
@@ -150,7 +160,102 @@ function render() {
   renderStats(tasks);
   const main = $("#main");
   main.innerHTML = "";
-  main.appendChild(F.view === "list" ? renderList(tasks) : renderBoard(tasks));
+  main.appendChild(
+    F.view === "list" ? renderList(tasks)
+      : F.view === "roadmap" ? renderRoadmap(tasks)
+      : renderBoard(tasks)
+  );
+}
+
+/* ---------- the AI Roadmap ----------
+   The board says where each brief stands. It does not say what to do next, and
+   with twenty open briefs that is the question that matters. The server ranks
+   the open work into four buckets and hands back the sentence explaining each
+   placement; this renders it. Every row is arguable — that is the point, an
+   order you cannot interrogate is an order you cannot trust. */
+
+const BUCKETS = [
+  { key: "now", name: "Now",
+    blurb: "Started, and nothing is in the way. Finish these before opening anything new." },
+  { key: "next", name: "Next",
+    blurb: "Committed, unblocked, nobody on it. This is where the next session starts." },
+  { key: "later", name: "Later",
+    blurb: "Something has to land first. The blocker is named on every row." },
+  { key: "someday", name: "Someday",
+    blurb: "Not committed to. It needs a decision before it can be scheduled, not a slot." },
+];
+
+function seqRows(tasks) {
+  const seq = (DATA && DATA.sequence) || [];
+  const by = new Map(tasks.map((t) => [t.projectKey + ":" + t.id, t]));
+  return seq
+    .map((r) => ({ r, t: by.get(r.project + ":" + r.id) }))
+    .filter((x) => x.t);
+}
+
+function renderRoadmap(tasks) {
+  const wrap = document.createElement("div");
+  wrap.className = "roadmap";
+  const rows = seqRows(tasks);
+
+  if (!rows.length) {
+    wrap.innerHTML = '<div class="empty big">No open tasks match.</div>';
+    return wrap;
+  }
+
+  const intro = document.createElement("p");
+  intro.className = "rm-intro";
+  intro.innerHTML =
+    "A proposed running order for the <b>" + rows.length + "</b> open brief" +
+    (rows.length === 1 ? "" : "s") + ". Order comes from declared " +
+    '<code>**Depends:**</code> lines first, then from state, label, observed git ' +
+    "activity, and how much other work each one unblocks. Nothing here is written " +
+    "back to the briefs — it is a read, like the board.";
+  wrap.appendChild(intro);
+
+  for (const b of BUCKETS) {
+    const mine = rows.filter((x) => x.r.bucket === b.key);
+    const sec = document.createElement("section");
+    sec.className = "rm-band rm-" + b.key;
+    sec.innerHTML =
+      '<header class="rm-head"><h2>' + esc(b.name) + '</h2>' +
+      '<span class="cnt">' + mine.length + "</span>" +
+      '<span class="rm-blurb">' + esc(b.blurb) + "</span></header>";
+    const body = document.createElement("div");
+    body.className = "rm-body";
+    if (!mine.length) {
+      body.innerHTML = '<div class="empty">—</div>';
+    } else {
+      for (const { r, t } of mine) body.appendChild(roadmapRow(r, t));
+    }
+    sec.appendChild(body);
+    wrap.appendChild(sec);
+  }
+  return wrap;
+}
+
+function roadmapRow(r, t) {
+  const el = document.createElement("article");
+  el.className = "rm-row" + (t.active ? " is-active" : "") + (t.stale ? " is-stale" : "");
+  const blockers = (r.blockedBy || [])
+    .map((b) => '<span class="dep" title="' + esc(b.title) + '">#' + esc(b.ref) + "</span>")
+    .join("");
+  el.innerHTML =
+    '<span class="rm-rank">' + r.rank + "</span>" +
+    '<div class="rm-main">' +
+      '<div class="rm-title"><span class="ref">#' + t.id + "</span> " +
+        esc(t.title) + labelChip(t.label) + "</div>" +
+      '<div class="rm-why">' + esc(r.why) + "</div>" +
+    "</div>" +
+    '<div class="rm-side">' +
+      '<span class="pdot" style="background:' + t.color + '"></span>' +
+      '<span class="rm-proj">' + esc(t.project) + "</span>" +
+      (blockers ? '<span class="rm-deps">waits on ' + blockers + "</span>" : "") +
+      (r.unlocks ? '<span class="rm-unlocks" title="Tasks transitively waiting on this one">' +
+        "unblocks " + r.unlocks + "</span>" : "") +
+    "</div>";
+  el.addEventListener("click", () => openModal(t));
+  return el;
 }
 
 function renderStats(shown) {
@@ -340,6 +445,13 @@ function openModal(t) {
   const a = t.activity;
   $("#m-state").textContent = stateName(t.state) + (t.done ? " · in done/" : "");
   $("#m-state").className = "statepill" + (t.active ? " live" : t.stale ? " stale" : "");
+  const seq = ((DATA && DATA.sequence) || [])
+    .find((r) => r.project === t.projectKey && r.id === t.id);
+  $("#m-seq").innerHTML = seq
+    ? '<span class="rm-rank">' + seq.rank + "</span>" +
+      "<b>" + esc(BUCKETS.find((b) => b.key === seq.bucket).name) + "</b> in the running order — " +
+      esc(seq.why)
+    : "";
   $("#m-act").innerHTML = t.done ? "" : a
     ? '<span class="adot"></span>' + a.commits + (a.commits === 1 ? " commit · " : " commits · ") +
       ago(a.daysAgo) + " · " + esc(clip(a.subject, 60)) +
@@ -509,11 +621,13 @@ function boot() {
   $("#q").addEventListener("input", (e) => { F.q = e.target.value.trim(); render(); });
   $("#group").addEventListener("change", (e) => { F.group = e.target.value; render(); });
   $("#showDone").addEventListener("change", (e) => { F.showDone = e.target.checked; render(); });
+  syncControls();
   $("#refresh").addEventListener("click", load);
   $$("#view button").forEach((b) => {
     b.addEventListener("click", () => {
       F.view = b.dataset.view;
       $$("#view button").forEach((x) => x.classList.toggle("on", x === b));
+      syncControls();
       render();
     });
   });
