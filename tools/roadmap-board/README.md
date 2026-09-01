@@ -47,8 +47,10 @@ the page always shows the current state of the files. Binds to 127.0.0.1 only.
 - **Activity** overrides the status line where they disagree, because a Status
   line records what was *decided* and git records what was *done*. See below.
 - **Filters**: project chips (tooltip shows the roadmap path and the next free
-  ID), label chips, full-text search (title, status, body, `#id`), a done
-  toggle, and a list view for JIRA-style table browsing.
+  ID), label chips, release chips (tooltip shows status and target; the row
+  appears only once something declares or names a release), full-text search
+  (title, status, body, `#id`), a done toggle, and a list view for JIRA-style
+  table browsing.
 - **Deep links**: opening a task sets the URL hash — `#tekio:7` opens tekio
   task 7 directly (nested projects URL-encode the key, e.g.
   `#feya-workspace%2Ffeyabuild:1`). Views are bookmarkable too:
@@ -80,6 +82,17 @@ panel — that pile is the planning inbox. The view always includes done tickets
 whatever the done toggle says, because the progress bar means nothing without
 them. The board can also group columns by release (`Group: release`), and
 release names are searchable.
+
+**Filtering by release** works like the project and label rows: click a chip to
+narrow every view to that release (chips are additive; **no release** selects
+the unscheduled pile). The filter narrows the release-grouped columns and the
+Releases view's panels too, so picking one release shows that release rather
+than a page of empty ones.
+
+The `**Release:**` line may carry a note after a spaced dash —
+`**Release:** 2.0.0 — tagged because …` — the same "value — sentence" habit the
+`**Status:**` line uses; only the part before the dash is the release name. A
+hyphen inside a name (`2.1.0-beta`) is not a separator.
 
 Nothing here is written back either: scheduling a ticket into a release means
 editing its `**Release:**` line.

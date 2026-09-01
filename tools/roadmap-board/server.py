@@ -44,6 +44,11 @@ KNOWN_LABELS = ("bug", "infra", "feature", "backlog")
 RELEASES_FILE = "releases.md"
 H2_RE = re.compile(r"^##\s+(.+?)\s*$")
 
+# **Release:** 2.0.0 — why it was scheduled here. Briefs follow the **Status:**
+# "keyword — sentence" habit on this line too, so the name is the part before a
+# *spaced* dash; a hyphen inside a name ("2.1.0-beta") is not a separator.
+REL_NOTE_RE = re.compile(r"\s+[—–-]\s.*$", re.S)
+
 # Board column derived from the free-text **Status:** line (first match wins).
 # Parked and TBC share one Backlog column: both mean "not committed to yet", and
 # splitting them made two thin columns nobody scanned.
@@ -267,7 +272,7 @@ def parse_brief(path: Path, done: bool) -> dict:
     label_raw = meta.get("Label", "").strip()
     label = label_raw.lower() if label_raw.lower() in KNOWN_LABELS else label_raw
     status = meta.get("Status", "").strip()
-    release = meta.get("Release", "").strip() or None
+    release = REL_NOTE_RE.sub("", meta.get("Release", "").strip()).strip() or None
 
     # Summary: first plain paragraph after the meta block.
     summary = ""

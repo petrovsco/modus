@@ -21,7 +21,7 @@ const PROJECT_COLORS = ["#4f6ef7", "#0ea5a4", "#e8842c", "#d6549e", "#7a63e0", "
 const REL_DOT = "#0e8f8e";
 
 let DATA = null;
-const F = { q: "", projects: new Set(), labels: new Set(), showDone: true, group: "state", view: "board" };
+const F = { q: "", projects: new Set(), labels: new Set(), releases: new Set(), showDone: true, group: "state", view: "board" };
 
 /* ---------- helpers ---------- */
 
@@ -36,6 +36,23 @@ function clip(s, n) {
 
 function labKey(t) {
   return LABELS.includes(t.label) ? t.label : "none";
+}
+
+function relKey(t) {
+  return t.release || "none";
+}
+
+/* Every release name known to the board, in registry order, deduped across
+   projects (two projects can ship a "2.0.0" of their own). */
+function releaseNames() {
+  const seen = new Set();
+  const names = [];
+  for (const p of DATA.projects) {
+    for (const r of p.releases || []) {
+      if (!seen.has(r.name)) { seen.add(r.name); names.push(r.name); }
+    }
+  }
+  return names;
 }
 
 /* ---------- activity ---------- */
@@ -111,6 +128,7 @@ function matches(t) {
   if (!F.showDone && t.state === "done" && F.view !== "releases") return false;
   if (F.projects.size && !F.projects.has(t.projectKey)) return false;
   if (F.labels.size && !F.labels.has(labKey(t))) return false;
+  if (F.releases.size && !F.releases.has(relKey(t))) return false;
   if (F.q) {
     const q = F.q.toLowerCase();
     const hay = [t.title, t.summary, t.status, t.file, t.project, "#" + t.id, t.ref, t.label, t.release, t.body]
@@ -326,6 +344,35 @@ function renderFilters() {
       onClick: (el) => { toggleSet(F.labels, l); el.classList.toggle("on"); render(); },
     }));
   }
+  renderReleaseChips(tasks);
+}
+
+/* The release row only exists once something declares or names a release —
+   until then it would be a separator with nothing after it. */
+function renderReleaseChips(tasks) {
+  const rc = $("#relChips");
+  const meta = new Map();
+  for (const p of DATA.projects) for (const r of p.releases || []) if (!meta.has(r.name)) meta.set(r.name, r);
+  const keys = releaseNames();
+  if (keys.length && tasks.some((t) => !t.release)) keys.push("none");
+  rc.hidden = $("#relSep").hidden = !keys.length;
+  rc.innerHTML = "";
+  for (const name of keys) {
+    const r = meta.get(name);
+    const bits = r && r.status === "released"
+      ? ["released" + (r.releasedOn ? " " + r.releasedOn : "")]
+      : r ? ["planned"] : [];
+    if (r && r.target) bits.push("target " + r.target);
+    if (r && r.declared === false) bits.push("undeclared — named by briefs only");
+    rc.appendChild(mkChip({
+      text: name === "none" ? "no release" : name,
+      dot: name === "none" ? LABEL_DOT.none : REL_DOT,
+      count: tasks.filter((t) => relKey(t) === name).length,
+      title: bits.join(" · ") || undefined,
+      active: F.releases.has(name),
+      onClick: (el) => { toggleSet(F.releases, name); el.classList.toggle("on"); render(); },
+    }));
+  }
 }
 
 function groupsFor(tasks) {
@@ -348,13 +395,10 @@ function groupsFor(tasks) {
     }));
   }
   if (F.group === "release") {
-    const seen = new Set();
-    const names = [];
-    for (const p of DATA.projects) {
-      for (const r of p.releases || []) {
-        if (!seen.has(r.name)) { seen.add(r.name); names.push(r.name); }
-      }
-    }
+    // A release filter narrows the columns too - otherwise picking one release
+    // leaves every other column standing and empty.
+    let names = releaseNames();
+    if (F.releases.size) names = names.filter((n) => F.releases.has(n));
     const groups = names.map((name) => ({
       key: "rel:" + name, name: name, dot: REL_DOT,
       items: tasks.filter((t) => t.release === name),
@@ -549,13 +593,17 @@ function relPanel(rel, items, open) {
 function renderReleases(tasks) {
   const wrap = document.createElement("div");
   wrap.className = "releases";
-  const filtered = F.q || F.projects.size || F.labels.size;
+  const filtered = F.q || F.projects.size || F.labels.size || F.releases.size;
   let any = false;
 
   for (const p of DATA.projects) {
-    const rels = p.releases || [];
-    if (!rels.length) continue;
+    if (!(p.releases || []).length) continue;
+    // A release filter hides the panels it excludes, so the view shows the
+    // releases you asked for rather than a page of empty ones.
+    const rels = p.releases.filter((r) => !F.releases.size || F.releases.has(r.name));
     const mine = tasks.filter((t) => t.projectKey === p.key);
+    const un = mine.filter((t) => !t.release && !t.done);
+    if (!rels.length && !un.length) continue;
     if (!mine.length && filtered) continue;
     any = true;
 
@@ -567,7 +615,6 @@ function renderReleases(tasks) {
       const items = mine.filter((t) => t.release === r.name);
       sec.appendChild(relPanel(r, items, r.status !== "released"));
     }
-    const un = mine.filter((t) => !t.release && !t.done);
     if (un.length) sec.appendChild(relPanel({ name: "Unscheduled", pseudo: true }, un, false));
     wrap.appendChild(sec);
   }
