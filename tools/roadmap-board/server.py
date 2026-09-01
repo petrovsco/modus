@@ -36,6 +36,14 @@ DEPENDS_RE = re.compile(r"\b0*(\d{1,4})\b")
 
 KNOWN_LABELS = ("bug", "infra", "feature", "backlog")
 
+# The release registry: docs/roadmap/releases.md — furniture (no NNN- prefix),
+# so /roadmap never mistakes it for a task. One "## <name>" section per release;
+# the heading text IS the release name, spelled exactly as briefs reference it
+# in their **Release:** line. Meta lines: **Target:** (free-form date) and
+# **Status:** planned | released <when>. File order is display order.
+RELEASES_FILE = "releases.md"
+H2_RE = re.compile(r"^##\s+(.+?)\s*$")
+
 # Board column derived from the free-text **Status:** line (first match wins).
 # Parked and TBC share one Backlog column: both mean "not committed to yet", and
 # splitting them made two thin columns nobody scanned.
@@ -259,6 +267,7 @@ def parse_brief(path: Path, done: bool) -> dict:
     label_raw = meta.get("Label", "").strip()
     label = label_raw.lower() if label_raw.lower() in KNOWN_LABELS else label_raw
     status = meta.get("Status", "").strip()
+    release = meta.get("Release", "").strip() or None
 
     # Summary: first plain paragraph after the meta block.
     summary = ""
@@ -288,7 +297,8 @@ def parse_brief(path: Path, done: bool) -> dict:
     # **Depends:** 018, 019 - hard blockers only, by task id.
     depends = sorted({int(x) for x in DEPENDS_RE.findall(meta.get("Depends", ""))})
 
-    extra = {k2: v for k2, v in meta.items() if k2 not in ("Label", "Status", "Depends")}
+    extra = {k2: v for k2, v in meta.items()
+             if k2 not in ("Label", "Status", "Depends", "Release")}
     return {
         "depends": depends,
         "id": int(ref),
@@ -296,6 +306,7 @@ def parse_brief(path: Path, done: bool) -> dict:
         "file": path.name,
         "title": title,
         "label": label,
+        "release": release,
         "status": status or "—",
         "state": derive_state(status, done),
         "done": done,
@@ -303,6 +314,74 @@ def parse_brief(path: Path, done: bool) -> dict:
         "summary": summary,
         "body": text,
     }
+
+
+def parse_releases(rm: Path) -> list:
+    """Read the release registry (releases.md) into declared releases, in file
+    order. Prose above the first ## heading is for people and is skipped."""
+    f = None
+    if rm.is_dir():
+        f = next((p for p in rm.iterdir()
+                  if p.is_file() and p.name.lower() == RELEASES_FILE), None)
+    if f is None:
+        return []
+    text = f.read_text(encoding="utf-8", errors="replace")
+    releases, cur, fence = [], None, False
+    for line in text.replace("\r\n", "\n").replace("\r", "\n").split("\n"):
+        s = line.strip()
+        if s.startswith("```"):
+            fence = not fence
+            continue
+        if fence:
+            continue
+        h = H2_RE.match(s)
+        if h:
+            cur = {"name": h.group(1), "target": "", "status": "planned",
+                   "releasedOn": "", "description": "", "declared": True,
+                   "_closed": False}
+            releases.append(cur)
+            continue
+        if cur is None:
+            continue
+        if not s or s.startswith("#"):
+            # A blank line or heading ends the first paragraph - the
+            # description is that paragraph, nothing after it.
+            cur["_closed"] = cur["_closed"] or bool(cur["description"])
+            continue
+        mm = META_RE.match(s)
+        if mm:
+            key, val = mm.group(1).strip().lower(), mm.group(2).strip()
+            if key == "target":
+                cur["target"] = val
+            elif key == "status" and val.lower().startswith("released"):
+                cur["status"] = "released"
+                cur["releasedOn"] = val[len("released"):].strip(" -—:")
+            continue
+        if not cur["_closed"] and not s.startswith((">", "|", "-", "*")):
+            cur["description"] = (cur["description"] + " " + plain(s)).strip()
+    for r in releases:
+        r.pop("_closed", None)
+    return releases
+
+
+def merge_releases(tasks: list, releases: list) -> list:
+    """Unify task **Release:** spellings with the registry, and append releases
+    that briefs name but the registry does not declare."""
+    canon = {r["name"].casefold(): r["name"] for r in releases}
+    adhoc: dict = {}
+    for t in tasks:
+        rel = t.get("release")
+        if not rel:
+            continue
+        c = canon.get(rel.casefold())
+        if c:
+            t["release"] = c
+        else:
+            t["release"] = adhoc.setdefault(rel.casefold(), rel)
+    for name in sorted(adhoc.values(), key=str.casefold):
+        releases.append({"name": name, "target": "", "status": "planned",
+                         "releasedOn": "", "description": "", "declared": False})
+    return releases
 
 
 def apply_activity(task: dict, act: dict) -> None:
@@ -339,12 +418,14 @@ def scan_roadmap(rm: Path, name: str, key: str, use_git: bool = True) -> dict:
     for t in tasks:
         apply_activity(t, activity.get(t["id"]))
     tasks.sort(key=lambda t: t["id"])
+    releases = merge_releases(tasks, parse_releases(rm))
     high = max((t["id"] for t in tasks), default=0)
     return {
         "name": name,
         "key": key,
         "path": str(rm),
         "nextId": high + 1,
+        "releases": releases,
         "openCount": sum(1 for t in tasks if not t["done"]),
         "doneCount": sum(1 for t in tasks if t["done"]),
         "activeCount": sum(1 for t in tasks if t.get("active") and not t["done"]),

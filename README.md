@@ -106,9 +106,9 @@ session-flow: context guard ──fires──▶ session-wrap-up rule ──hand
 ## Tools
 
 `tools/roadmap-board/` — a local, read-only JIRA/Trello-style web board over
-every project's `docs/roadmap/` briefs (ticket IDs, labels, states, full-brief
-view). Run `python3 tools/roadmap-board/server.py` → http://127.0.0.1:4830.
-See its README; repo-URL sources are roadmap task 1.
+every project's `docs/roadmap/` briefs (ticket IDs, labels, states, releases,
+full-brief view). Run `python3 tools/roadmap-board/server.py` →
+http://127.0.0.1:4830. See its README; repo-URL sources are roadmap task 1.
 
 ## Secrets
 
@@ -128,10 +128,16 @@ import lines. Old id → new home: `context-guard-hook` / `memory-after-commit-h
 
 ## Changing things
 
-- Edit a rule (or anything in a plugin) → **bump that plugin's `version`** in
-  its `plugin.json`, commit, then `claude plugin update modus@modus` (per
-  machine). Installs are copied into a versioned cache
-  (`~/.claude/plugins/cache/…`) — without the bump + update, machines keep the
-  old copy. Rules then reach repos at the next session start via the sync.
+- Edit a rule (or anything in a plugin) → **bump that plugin's patch version**
+  (`1.3.0 → 1.3.1`) in its `plugin.json`, commit, then
+  `claude plugin update <plugin>@modus` (per machine). Installs are copied into
+  a versioned cache (`~/.claude/plugins/cache/…`) — without the bump + update,
+  machines keep the old copy. Rules then reach repos at the next session start
+  via the sync.
 - Add anything new → the **capture** skill keeps `catalog.json` and this
-  README in sync and bumps the owning plugin's version.
+  README in sync and bumps the owning plugin's patch version.
+- **Minor (and major) versions are planned, never automatic.** Day-to-day work
+  moves only the patch digit. A plugin reaches `x.(y+1).0` the same way any
+  release does here: declared in `docs/roadmap/releases.md` (named
+  `<plugin> x.y.0`), scoped by `**Release:**` lines on briefs, and bumped only
+  when that release ships — on the user's say-so.

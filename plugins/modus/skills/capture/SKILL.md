@@ -75,8 +75,11 @@ Then register:
 
 1. Add/update the entry in `catalog.json` (keep JSON valid, match the shape).
 2. Update the catalog table in `README.md`.
-3. **Bump the owning plugin's `version`** in its `.claude-plugin/plugin.json` —
-   installs are version-cached; without the bump nothing propagates.
+3. **Bump the owning plugin's patch version** (`1.3.0 → 1.3.1`) in its
+   `.claude-plugin/plugin.json` — installs are version-cached; without the bump
+   nothing propagates. Patch only: minor/major versions are planned releases
+   (declared in the modus repo's `docs/roadmap/releases.md`) and move on the
+   user's say-so, never automatically.
 
 ## Finish
 

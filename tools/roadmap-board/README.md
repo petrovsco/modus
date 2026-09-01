@@ -34,9 +34,10 @@ the page always shows the current state of the files. Binds to 127.0.0.1 only.
 ## What the board shows
 
 - **Cards** carry the permanent ticket ID (`#7`), title, label chip
-  (bug / infra / feature / backlog), the status line, and the project.
-  Clicking a card renders the full brief (markdown), with links between briefs
-  opening the linked task.
+  (bug / infra / feature / backlog), release chip (`2.0.0`) when the brief has
+  a `**Release:**` line, the status line, and the project. Clicking a card
+  renders the full brief (markdown), with links between briefs opening the
+  linked task.
 - **Columns** are derived from the `**Status:**` line's leading keyword:
   Backlog (parked, TBC, shelved, on hold, someday — everything not committed
   to yet) · Planned (also "ready", "agreed", "proposed", "settled") ·
@@ -50,10 +51,38 @@ the page always shows the current state of the files. Binds to 127.0.0.1 only.
   toggle, and a list view for JIRA-style table browsing.
 - **Deep links**: opening a task sets the URL hash — `#tekio:7` opens tekio
   task 7 directly (nested projects URL-encode the key, e.g.
-  `#feya-workspace%2Ffeyabuild:1`).
+  `#feya-workspace%2Ffeyabuild:1`). Views are bookmarkable too:
+  `?view=releases`, `?group=release`, etc.
 - Furniture (`README.md`, shared-context files — any `.md` without a `NNN-`
   prefix) is ignored, as `/roadmap` does. A brief that predates the label
   convention shows as `—`.
+
+## Releases — the Jira version view
+
+A brief opts into a release with one optional header line, kept when the brief
+retires to `done/` (that is what keeps a shipped release's scope browsable):
+
+```markdown
+**Release:** 2.0.0
+```
+
+The registry is `docs/roadmap/releases.md` — furniture, so `/roadmap` never
+mistakes it for a task. One `##` section per release; **the heading text is the
+release name**, exactly as briefs spell it. `**Target:**` is a free-form date,
+`**Status:**` is `planned` (default) or `released <date>`, the first paragraph
+is the description, and file order is display order.
+
+The **Releases** view shows, per project, one panel per release: status and
+target pills, a progress bar (done · in progress · remaining), the description,
+and the tickets sorted working-first. A release named only by briefs shows as
+*undeclared*; open tickets with no release land in a collapsed **Unscheduled**
+panel — that pile is the planning inbox. The view always includes done tickets
+whatever the done toggle says, because the progress bar means nothing without
+them. The board can also group columns by release (`Group: release`), and
+release names are searchable.
+
+Nothing here is written back either: scheduling a ticket into a release means
+editing its `**Release:**` line.
 
 ## Observed activity — the column the files don't declare
 

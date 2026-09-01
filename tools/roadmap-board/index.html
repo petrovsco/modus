@@ -10,13 +10,14 @@
   --line:#e3e5e8; --accent:#4f6ef7;
   --shadow:0 1px 2px rgba(16,20,30,.06), 0 4px 14px rgba(16,20,30,.05);
   --bug:#e5484d; --infra:#8e4ec6; --feature:#2f9e63; --backlog:#8b8d98;
-  --live:#1f9d55; --stale:#c2820b;
+  --live:#1f9d55; --stale:#c2820b; --rel:#0e8f8e;
+  --chip:var(--panel2); --card:var(--panel);
 }
 @media (prefers-color-scheme: dark){
   :root{
     --bg:#141519; --panel:#1e2026; --panel2:#25272e; --text:#e8eaed; --muted:#9aa0aa;
     --line:#2c2f37; --accent:#7b93ff; --shadow:0 1px 2px rgba(0,0,0,.4);
-    --feature:#3fbf7f; --bug:#f2555a; --live:#40c47c; --stale:#e0a83a;
+    --feature:#3fbf7f; --bug:#f2555a; --live:#40c47c; --stale:#e0a83a; --rel:#35b8ae;
   }
 }
 *{box-sizing:border-box}
@@ -112,6 +113,43 @@ main{padding:10px 18px 24px}
 .m-seq:empty{display:none}
 @media (max-width:720px){.rm-side{max-width:none;width:100%;justify-content:flex-start}}
 
+.card-chips{display:inline-flex;gap:6px;align-items:center}
+.rchip{display:inline-flex;align-items:center;padding:1px 7px;border-radius:6px;font-size:11px;font-weight:600;white-space:nowrap;
+  font-family:ui-monospace,"Cascadia Code",Consolas,monospace;color:var(--rel);
+  border:1px solid color-mix(in srgb,var(--rel) 45%,transparent);
+  background:color-mix(in srgb,var(--rel) 8%,transparent)}
+
+/* ---- Releases (the Jira version view) ---- */
+.releases{max-width:1080px;margin:0 auto;padding:14px 16px 60px}
+.rel-proj{margin-bottom:30px}
+.rel-proj h2{display:flex;align-items:center;gap:8px;font-size:15px;margin:0 0 10px;letter-spacing:.2px}
+details.rel{background:var(--panel);border:1px solid var(--line);border-radius:12px;margin-bottom:10px;box-shadow:var(--shadow)}
+details.rel.pseudo{background:transparent;box-shadow:none;border-style:dashed}
+details.rel summary{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 16px;cursor:pointer;list-style:none}
+details.rel summary::-webkit-details-marker{display:none}
+details.rel summary::before{content:"\25B8";color:var(--muted);font-size:11px;transition:transform .12s ease}
+details.rel[open] summary::before{transform:rotate(90deg)}
+.rel-name{font-size:14.5px;font-weight:700;font-family:ui-monospace,"Cascadia Code",Consolas,monospace}
+.relpill{border:1px solid var(--line);border-radius:999px;padding:2px 9px;font-size:11px;color:var(--muted);white-space:nowrap}
+.relpill.released{color:var(--live);border-color:color-mix(in srgb,var(--live) 45%,var(--line))}
+.relpill.undeclared{border-style:dashed;cursor:help}
+.rel-count{margin-left:auto;font-size:12px;color:var(--muted);white-space:nowrap}
+.bar{flex:0 0 190px;height:8px;border-radius:999px;background:var(--panel2);border:1px solid var(--line);overflow:hidden;display:flex}
+.bar .b-done{background:var(--live);height:100%}
+.bar .b-prog{background:var(--accent);height:100%}
+.rel-body{border-top:1px solid var(--line);padding:6px 10px 10px}
+.rel-desc{color:var(--muted);font-size:12.5px;margin:8px 6px 10px;line-height:1.55}
+.rel-task{display:flex;align-items:center;gap:10px;padding:7px 8px;border-radius:8px;cursor:pointer;font-size:13px}
+.rel-task:hover{background:color-mix(in srgb,var(--accent) 7%,transparent)}
+.rel-task.is-done{opacity:.6}
+.rel-task .rel-title{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rel-state{font-size:11px;color:var(--muted);white-space:nowrap}
+.st-inprogress{color:var(--live)}
+.st-blocked{color:var(--bug)}
+.st-done{color:var(--feature)}
+.rel-ago{font-size:11px;color:var(--muted);width:56px;text-align:right;flex:none}
+@media (max-width:720px){.bar{flex-basis:100%}.rel-count{margin-left:0}}
+
 .lchip{display:inline-flex;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:600;letter-spacing:.2px;white-space:nowrap}
 .lbl-bug{background:color-mix(in srgb,var(--bug) 14%,transparent);color:var(--bug)}
 .lbl-infra{background:color-mix(in srgb,var(--infra) 14%,transparent);color:var(--infra)}
@@ -177,10 +215,12 @@ table.list td .pdot{margin-right:6px}
       <option value="state" selected>Group: state</option>
       <option value="label">Group: label</option>
       <option value="project">Group: project</option>
+      <option value="release">Group: release</option>
     </select>
     <div class="seg" id="view">
       <button type="button" data-view="board" class="on">Board</button>
       <button type="button" data-view="list">List</button>
+      <button type="button" data-view="releases" title="Tickets per release — declared in docs/roadmap/releases.md and on briefs' **Release:** lines">Releases</button>
       <button type="button" data-view="roadmap" title="A proposed order to do the open work in">AI Roadmap</button>
     </div>
     <label class="chk"><input type="checkbox" id="showDone" checked> done</label>
@@ -203,6 +243,7 @@ table.list td .pdot{margin-right:6px}
       <span id="m-ref" class="ref big"></span>
       <span id="m-proj" class="mproj"></span>
       <span id="m-label"></span>
+      <span id="m-rel"></span>
       <span id="m-state" class="statepill"></span>
     </div>
     <h2 id="m-title"></h2>

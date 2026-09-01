@@ -87,6 +87,16 @@ header:
    `**Depends:** <this id>` to *that* brief. A dependency is one edge and it has
    two ends; recording it on only one leaves the order wrong.
 
+**A brief committed to a release says so.** One optional header line —
+`**Release:** 2.0.0` — one release per brief, kept when the brief moves to
+`done/` so a shipped release's scope stays browsable. Releases are declared in
+`docs/roadmap/releases.md` (furniture, never a task): one `##` section per
+release whose heading text is the name exactly as briefs spell it, with
+optional `**Target:**` and `**Status:** planned | released <date>` lines.
+Editing the `**Release:**` line *is* the scheduling act — tag what must ship in
+the release, untag what moves out. Work that can only happen *after* the
+release ships is not in it; it depends on it.
+
 **Reference docs must not carry future work.** A doctrine, an index, an ADR, a
 README states what *is* and why. The moment one grows a "proposed edit",
 "follow-up", "next step", "TODO", or "needs a brief", that item has escaped

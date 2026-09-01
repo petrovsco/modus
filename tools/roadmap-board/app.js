@@ -18,6 +18,7 @@ const STATE_DOT = {
 const LABELS = ["bug", "infra", "feature", "backlog"];
 const LABEL_DOT = { bug: "#e5484d", infra: "#8e4ec6", feature: "#2f9e63", backlog: "#8b8d98", none: "#b3b7be" };
 const PROJECT_COLORS = ["#4f6ef7", "#0ea5a4", "#e8842c", "#d6549e", "#7a63e0", "#5f8f2f", "#c8a232", "#3f8cd6"];
+const REL_DOT = "#0e8f8e";
 
 let DATA = null;
 const F = { q: "", projects: new Set(), labels: new Set(), showDone: true, group: "state", view: "board" };
@@ -90,6 +91,10 @@ function labelChip(label) {
   return '<span class="lchip lbl-' + (known ? label : "none") + '">' + esc(label) + "</span>";
 }
 
+function relChip(t) {
+  return t.release ? '<span class="rchip">' + esc(t.release) + "</span>" : "";
+}
+
 function allTasks() {
   const out = [];
   for (const p of DATA.projects) {
@@ -101,12 +106,14 @@ function allTasks() {
 }
 
 function matches(t) {
-  if (!F.showDone && t.state === "done") return false;
+  // The releases view keeps done tickets whatever the toggle says - without
+  // them a release's progress bar cannot mean anything.
+  if (!F.showDone && t.state === "done" && F.view !== "releases") return false;
   if (F.projects.size && !F.projects.has(t.projectKey)) return false;
   if (F.labels.size && !F.labels.has(labKey(t))) return false;
   if (F.q) {
     const q = F.q.toLowerCase();
-    const hay = [t.title, t.summary, t.status, t.file, t.project, "#" + t.id, t.ref, t.label, t.body]
+    const hay = [t.title, t.summary, t.status, t.file, t.project, "#" + t.id, t.ref, t.label, t.release, t.body]
       .join(" ").toLowerCase();
     if (!hay.includes(q)) return false;
   }
@@ -118,9 +125,10 @@ function byProjectAndId(a, b) {
 }
 
 /* Grouping and the done toggle only mean something on the board and the list —
-   the roadmap shows open work in one fixed order. */
+   the roadmap shows open work in one fixed order, and the releases view always
+   includes done (the progress bars need it). */
 function syncControls() {
-  const rm = F.view === "roadmap";
+  const rm = F.view === "roadmap" || F.view === "releases";
   $("#group").disabled = rm;
   $("#showDone").disabled = rm;
   $("#group").classList.toggle("dim", rm);
@@ -163,6 +171,7 @@ function render() {
   main.appendChild(
     F.view === "list" ? renderList(tasks)
       : F.view === "roadmap" ? renderRoadmap(tasks)
+      : F.view === "releases" ? renderReleases(tasks)
       : renderBoard(tasks)
   );
 }
@@ -338,6 +347,24 @@ function groupsFor(tasks) {
       items: tasks.filter((t) => t.projectKey === p.key),
     }));
   }
+  if (F.group === "release") {
+    const seen = new Set();
+    const names = [];
+    for (const p of DATA.projects) {
+      for (const r of p.releases || []) {
+        if (!seen.has(r.name)) { seen.add(r.name); names.push(r.name); }
+      }
+    }
+    const groups = names.map((name) => ({
+      key: "rel:" + name, name: name, dot: REL_DOT,
+      items: tasks.filter((t) => t.release === name),
+    }));
+    groups.push({
+      key: "rel:none", name: "no release", dot: LABEL_DOT.none, optional: true,
+      items: tasks.filter((t) => !t.release),
+    });
+    return groups.filter((g) => !g.optional || g.items.length);
+  }
   const cols = F.showDone ? STATE_COLS : STATE_COLS.filter((c) => c.key !== "done");
   return cols
     .map((c) => ({
@@ -353,7 +380,8 @@ function card(t) {
   if (t.active) el.classList.add("is-active");
   if (t.stale) el.classList.add("is-stale");
   el.innerHTML =
-    '<div class="card-top"><span class="ref">#' + t.id + "</span>" + labelChip(t.label) + "</div>" +
+    '<div class="card-top"><span class="ref">#' + t.id + '</span>' +
+    '<span class="card-chips">' + relChip(t) + labelChip(t.label) + "</span></div>" +
     '<h3 class="card-title">' + esc(t.title) + "</h3>" +
     '<div class="card-status">' + esc(clip(t.status, 90)) + "</div>" +
     activityHTML(t) +
@@ -404,7 +432,7 @@ function renderList(tasks) {
   const table = document.createElement("table");
   table.className = "list";
   table.innerHTML =
-    "<thead><tr><th>Project</th><th>ID</th><th>Task</th><th>Label</th><th>State</th>" +
+    "<thead><tr><th>Project</th><th>ID</th><th>Task</th><th>Label</th><th>Release</th><th>State</th>" +
     "<th>Activity</th><th>Status</th></tr></thead>";
   const tb = document.createElement("tbody");
   for (const t of tasks.slice().sort(byProjectAndId)) {
@@ -415,6 +443,7 @@ function renderList(tasks) {
       '<td class="ref">#' + t.id + "</td>" +
       "<td>" + esc(t.title) + '<div class="sub">' + esc(clip(t.summary, 140)) + "</div></td>" +
       "<td>" + labelChip(t.label) + "</td>" +
+      '<td class="nowrap">' + (relChip(t) || '<span class="sub">—</span>') + "</td>" +
       '<td class="nowrap">' + esc(stateName(t.state)) +
         (t.promoted ? ' <span class="why">moved</span>' : "") +
         (t.stale ? ' <span class="why stale">stale</span>' : "") + "</td>" +
@@ -436,12 +465,132 @@ function renderList(tasks) {
   return wrap;
 }
 
+/* ---------- Releases — the Jira version view ----------
+   One panel per release, per project: status and target, a progress bar
+   (done / in progress / remaining), and the tickets committed to it. The
+   registry is docs/roadmap/releases.md; a release that only briefs name still
+   shows, marked undeclared. Open tickets with no release land in Unscheduled —
+   that pile is the planning inbox. */
+
+const REL_STATE_ORDER = ["inprogress", "blocked", "planned", "backlog", "other", "done"];
+
+function relSort(a, b) {
+  const d = REL_STATE_ORDER.indexOf(a.state) - REL_STATE_ORDER.indexOf(b.state);
+  return d !== 0 ? d : a.id - b.id;
+}
+
+function relRow(t) {
+  const el = document.createElement("div");
+  el.className = "rel-task" + (t.done ? " is-done" : "");
+  el.innerHTML =
+    '<span class="ref">#' + t.id + "</span>" +
+    '<span class="rel-title">' + esc(t.title) + "</span>" +
+    (t.promoted ? '<span class="why">moved</span>' : "") +
+    (t.stale ? '<span class="why stale">stale</span>' : "") +
+    labelChip(t.label) +
+    '<span class="rel-state st-' + t.state + '">' + esc(stateName(t.state)) + "</span>" +
+    '<span class="rel-ago">' + (t.activity ? esc(ago(t.activity.daysAgo)) : "") + "</span>";
+  el.addEventListener("click", () => openModal(t));
+  return el;
+}
+
+function relPanel(rel, items, open) {
+  const d = document.createElement("details");
+  d.className = "rel" + (rel.pseudo ? " pseudo" : "");
+  d.open = open;
+
+  const n = items.length;
+  const done = items.filter((t) => t.done).length;
+  const prog = items.filter((t) => !t.done && t.state === "inprogress").length;
+  const pct = n ? Math.round((done / n) * 100) : 0;
+
+  const chips = rel.pseudo ? "" :
+    (rel.status === "released"
+      ? '<span class="relpill released">released' + (rel.releasedOn ? " " + esc(rel.releasedOn) : "") + "</span>"
+      : '<span class="relpill">planned</span>') +
+    (rel.target ? '<span class="relpill">target ' + esc(rel.target) + "</span>" : "") +
+    (rel.declared === false
+      ? '<span class="relpill undeclared" title="Named by briefs but not declared in releases.md">undeclared</span>'
+      : "");
+  const count = rel.pseudo
+    ? n + " open, no release"
+    : n ? pct + "% · " + done + " of " + n + " done" : "no tickets";
+  const bar = rel.pseudo || !n ? "" :
+    '<div class="bar" title="' + done + " done · " + prog + " in progress · " +
+      (n - done - prog) + ' to do">' +
+      '<span class="b-done" style="width:' + (done / n) * 100 + '%"></span>' +
+      '<span class="b-prog" style="width:' + (prog / n) * 100 + '%"></span></div>';
+
+  const sum = document.createElement("summary");
+  sum.innerHTML =
+    '<span class="rel-name">' + esc(rel.name) + "</span>" + chips +
+    '<span class="rel-count">' + count + "</span>" + bar;
+  d.appendChild(sum);
+
+  const body = document.createElement("div");
+  body.className = "rel-body";
+  if (rel.description) {
+    const p = document.createElement("p");
+    p.className = "rel-desc";
+    p.textContent = rel.description;
+    body.appendChild(p);
+  }
+  if (!n) {
+    const e = document.createElement("div");
+    e.className = "empty";
+    e.textContent = "No tickets yet — put **Release: " + rel.name + "** in a brief's header.";
+    body.appendChild(e);
+  }
+  for (const t of items.slice().sort(relSort)) body.appendChild(relRow(t));
+  d.appendChild(body);
+  return d;
+}
+
+function renderReleases(tasks) {
+  const wrap = document.createElement("div");
+  wrap.className = "releases";
+  const filtered = F.q || F.projects.size || F.labels.size;
+  let any = false;
+
+  for (const p of DATA.projects) {
+    const rels = p.releases || [];
+    if (!rels.length) continue;
+    const mine = tasks.filter((t) => t.projectKey === p.key);
+    if (!mine.length && filtered) continue;
+    any = true;
+
+    const sec = document.createElement("section");
+    sec.className = "rel-proj";
+    sec.innerHTML =
+      '<h2><span class="pdot" style="background:' + p.color + '"></span>' + esc(p.name) + "</h2>";
+    for (const r of rels) {
+      const items = mine.filter((t) => t.release === r.name);
+      sec.appendChild(relPanel(r, items, r.status !== "released"));
+    }
+    const un = mine.filter((t) => !t.release && !t.done);
+    if (un.length) sec.appendChild(relPanel({ name: "Unscheduled", pseudo: true }, un, false));
+    wrap.appendChild(sec);
+  }
+
+  if (!any) {
+    wrap.innerHTML =
+      '<div class="empty big">No releases' + (filtered ? " match." : " yet.") +
+      (filtered ? "" :
+        " Add a <code>**Release:** 2.0.0</code> line to a brief, or declare releases in " +
+        "<code>docs/roadmap/releases.md</code> (one <code>## name</code> section each, with " +
+        "optional <code>**Target:**</code> and <code>**Status:** released …</code> lines).") +
+      "</div>";
+  }
+  return wrap;
+}
+
 /* ---------- modal ---------- */
 
 function openModal(t) {
   $("#m-ref").textContent = "#" + t.id;
   $("#m-proj").innerHTML = '<span class="pdot" style="background:' + t.color + '"></span>' + esc(t.project);
   $("#m-label").innerHTML = labelChip(t.label);
+  $("#m-rel").innerHTML = relChip(t);
   const a = t.activity;
   $("#m-state").textContent = stateName(t.state) + (t.done ? " · in done/" : "");
   $("#m-state").className = "statepill" + (t.active ? " live" : t.stale ? " stale" : "");
@@ -618,6 +767,20 @@ function md(src) {
 /* ---------- boot ---------- */
 
 function boot() {
+  // ?view=board|list|releases|roadmap and ?group=state|label|project|release
+  // make a view bookmarkable.
+  const qs = new URLSearchParams(location.search);
+  const want = qs.get("view");
+  const vb = want && $('#view button[data-view="' + CSS.escape(want) + '"]');
+  if (vb) {
+    F.view = want;
+    $$("#view button").forEach((x) => x.classList.toggle("on", x === vb));
+  }
+  const grp = qs.get("group");
+  if (grp && $$("#group option").some((o) => o.value === grp)) {
+    F.group = grp;
+    $("#group").value = grp;
+  }
   $("#q").addEventListener("input", (e) => { F.q = e.target.value.trim(); render(); });
   $("#group").addEventListener("change", (e) => { F.group = e.target.value; render(); });
   $("#showDone").addEventListener("change", (e) => { F.showDone = e.target.checked; render(); });

@@ -1,6 +1,6 @@
 ---
-description: List roadmap tasks by their stable ID, or pick up a task by ID to start it
-argument-hint: [task ID, e.g. 7]
+description: List roadmap tasks by their stable ID, pick up a task by ID, or show a release's tickets
+argument-hint: [task ID, e.g. 7 — or a release, e.g. 2.0.0]
 allowed-tools: Glob, Read
 ---
 
@@ -8,8 +8,8 @@ Roadmap tasks are one markdown file per item in `docs/roadmap/` (adjust this pat
 if your project keeps them elsewhere). Finished briefs move to
 `docs/roadmap/done/` and **keep their ID**. Each file starts with
 `# Roadmap: <title>`, then a `**Label:**` line (bug / infra / feature /
-backlog), a `**Status:**` line, and an optional `**Depends:**` line — then the
-brief.
+backlog), a `**Status:**` line, and optional `**Depends:**` and `**Release:**`
+lines — then the brief.
 
 The `**Status:**` line **starts with one of five keywords**, then an em dash and
 a sentence: `backlog` (not committed to yet) · `planned` (committed and
@@ -52,6 +52,48 @@ even there the furniture stays unnumbered.
 *moved into `done/`* — never deleted — so the high-water mark stays visible in a
 directory listing and a retired ID can never be handed to a different task.
 
+## Releases
+
+A brief can be committed to a release with one optional header line:
+
+```markdown
+**Release:** 2.0.0
+```
+
+One release per brief, and the line **stays when the brief moves to `done/`** —
+that is what keeps a shipped release's scope browsable afterwards. Adding,
+changing, or removing the line *is* the scheduling act; there is no other
+bookkeeping.
+
+Releases themselves are declared in `docs/roadmap/releases.md` — furniture (no
+`NNN-` prefix, never a task). One `##` section per release; **the heading text
+is the release name**, spelled exactly as briefs reference it:
+
+```markdown
+## 2.0.0
+
+**Target:** 2026-10-15
+**Status:** planned
+
+One paragraph on the theme of the release.
+```
+
+`**Target:**` is a free-form date; `**Status:**` is `planned` (the default) or
+`released <date>`. File order is the display order. A release named only by
+briefs still works — tooling shows it as undeclared — but declare it as soon as
+it is real.
+
+When the user says **"plan release X"** (or add/move/revise tickets for it):
+make sure `releases.md` declares X; then scope it by editing `**Release:**`
+lines — tag the briefs that must ship in X, untag what moves out (say where it
+went: a later release, or unscheduled). Work that can only happen *after* X
+ships is not part of X — it depends on it; give it a `**Depends:**` or a
+blocked status naming the release instead. Creating a brief for a release means
+creating it normally (next free ID) plus the one `**Release:**` line. When X
+ships, flip its `releases.md` status to `released <date>` — briefs that are done
+move to `done/` as usual; anything still open gets a decision: move it to the
+next release or drop the tag.
+
 ## Behavior
 
 **If `$ARGUMENTS` is empty → list mode.**
@@ -68,6 +110,8 @@ Read each brief in `docs/roadmap/*.md` (just enough: title, `**Label:**`,
   backlog); `—` for a brief that predates the convention.
 - **Status** — the keyword from the `**Status:**` line (backlog / planned /
   in progress / blocked), plus its `**Depends:**` IDs if it has any.
+- **Release** — the `**Release:**` value. Include this column only when at
+  least one brief carries the line.
 - **Summary** — one sentence, from the Goal / opening context.
 
 Then one closing line. The done briefs do not need reading — their filenames
@@ -77,6 +121,15 @@ carry everything it needs:
 
 Finally, remind the user they can run `/roadmap <ID>` — or just say "pick up
 roadmap task <ID>" in any session — to start one.
+
+**If `$ARGUMENTS` is not a number and names a release → release mode.**
+
+Match it (case-insensitively) against `releases.md` headings and the
+`**Release:**` values across active **and** done briefs. Print the release's
+`releases.md` header (target, status, description), then its tickets in the
+list-mode table plus a progress line: *N of M done*. If the argument matches
+nothing, say so and list the known releases. A bare number is always a task ID,
+never a release.
 
 **If `$ARGUMENTS` names an ID → pickup mode.**
 
