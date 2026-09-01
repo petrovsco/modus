@@ -38,7 +38,7 @@ The label names the kind of work; the `**Status:**` line tracks where it
 stands. Give every new brief its label at creation. A brief that predates the
 convention just lacks the line — add one when you next touch it.
 
-**The `**Status:**` line starts with one of five words.** Everything after the
+**The `**Status:**` line starts with one of six words.** Everything after the
 em dash is for a person; the first word is what tooling reads.
 
 | Keyword | Means |
@@ -48,6 +48,16 @@ em dash is for a person; the first word is what tooling reads.
 | `in progress` | someone is working on it now |
 | `blocked` | committed, but something outside the brief must happen first |
 | `done` | finished — the file lives in `done/` |
+| `discarded` | dropped without shipping — the file lives in `done/` too |
+
+`done/` is the archive, not a trophy cabinet. A brief we decide **not** to do
+retires the same way a finished one does, but says so:
+`**Status:** discarded — <why, in one line>`. Two endings, two words — `done`
+shipped, `discarded` was dropped — and neither is a deletion, because the
+number is never reused and the reasoning is the part worth keeping. The state
+lives in the status line, never in the label: the label keeps saying what kind
+of work it *was*. Tools read the keyword and mark such a brief discarded rather
+than done, so a dropped brief never reads as a shipped one.
 
 Then an em dash and **one or two sentences** on where it actually stands. Not
 three paragraphs: a status line that has grown into a changelog is unreadable to

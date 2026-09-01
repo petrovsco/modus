@@ -66,6 +66,12 @@ STATE_PREFIXES = (
                     "agreed", "proposed", "settled", "structure settled", "decided", "scoped")),
 )
 
+# done/ is the archive, not a trophy cabinet: it holds what shipped AND what was
+# dropped. Both keep their number, so neither is deleted - but a dropped brief
+# must not read as a shipped one. It stays in the Done column (a column nobody
+# would scan is not worth one) carrying a "discarded" mark instead.
+DISCARDED_PREFIXES = ("discarded", "dropped", "abandoned", "won't do", "wont do")
+
 # --- observed activity -------------------------------------------------------
 # The Status line records what was *decided*; git records what was *done*. A
 # brief still reading "planned" that has had ten commits this week is in
@@ -222,6 +228,15 @@ def derive_state(status: str, done: bool) -> str:
     return "other"
 
 
+def is_discarded(status: str, done: bool) -> bool:
+    """A retired brief that was dropped rather than finished. Only meaningful in
+    done/ - an active brief saying "dropped" is a status nobody updated."""
+    if not done:
+        return False
+    s = status.lower().strip().lstrip("*_ ").strip()
+    return any(s.startswith(p) for p in DISCARDED_PREFIXES)
+
+
 def plain(s: str) -> str:
     """Strip light markdown for one-line summaries."""
     s = re.sub(r"\[([^\]]*)\]\([^)]*\)", r"\1", s)
@@ -315,6 +330,7 @@ def parse_brief(path: Path, done: bool) -> dict:
         "status": status or "—",
         "state": derive_state(status, done),
         "done": done,
+        "discarded": is_discarded(status, done),
         "meta": extra,
         "summary": summary,
         "body": text,

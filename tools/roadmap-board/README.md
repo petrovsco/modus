@@ -44,6 +44,12 @@ the page always shows the current state of the files. Binds to 127.0.0.1 only.
   In progress (also "shipped" — on an active brief that means partially
   shipped) · Blocked · Other (unrecognized) · Done (anything in `done/`,
   regardless of its status text). Group by label or project instead via the dropdown.
+- **Discarded** is the second way out of `done/`. That directory holds what
+  shipped *and* what was dropped — both keep their number, neither is deleted —
+  so a brief there whose status starts `discarded` (or `dropped`, `abandoned`,
+  `won't do`) stays in the Done column but wears a **discarded** chip, and the
+  list and detail panel say Discarded rather than Done. It is a state, not a
+  label: the label still says what kind of work it was.
 - **Activity** overrides the status line where they disagree, because a Status
   line records what was *decided* and git records what was *done*. See below.
 - **Filters**: project chips (tooltip shows the roadmap path and the next free

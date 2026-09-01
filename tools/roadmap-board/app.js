@@ -112,6 +112,13 @@ function relChip(t) {
   return t.release ? '<span class="rchip">' + esc(t.release) + "</span>" : "";
 }
 
+/* done/ holds two endings: shipped, and dropped. Both keep their number, so a
+   discarded brief sits in the Done column like any other - the chip is what
+   stops it reading as work that landed. */
+function discardChip(t) {
+  return t.discarded ? '<span class="lchip st-discarded">discarded</span>' : "";
+}
+
 function allTasks() {
   const out = [];
   for (const p of DATA.projects) {
@@ -425,7 +432,7 @@ function card(t) {
   if (t.stale) el.classList.add("is-stale");
   el.innerHTML =
     '<div class="card-top"><span class="ref">#' + t.id + '</span>' +
-    '<span class="card-chips">' + relChip(t) + labelChip(t.label) + "</span></div>" +
+    '<span class="card-chips">' + discardChip(t) + relChip(t) + labelChip(t.label) + "</span></div>" +
     '<h3 class="card-title">' + esc(t.title) + "</h3>" +
     '<div class="card-status">' + esc(clip(t.status, 90)) + "</div>" +
     activityHTML(t) +
@@ -488,7 +495,7 @@ function renderList(tasks) {
       "<td>" + esc(t.title) + '<div class="sub">' + esc(clip(t.summary, 140)) + "</div></td>" +
       "<td>" + labelChip(t.label) + "</td>" +
       '<td class="nowrap">' + (relChip(t) || '<span class="sub">—</span>') + "</td>" +
-      '<td class="nowrap">' + esc(stateName(t.state)) +
+      '<td class="nowrap">' + esc(t.discarded ? "Discarded" : stateName(t.state)) +
         (t.promoted ? ' <span class="why">moved</span>' : "") +
         (t.stale ? ' <span class="why stale">stale</span>' : "") + "</td>" +
       '<td class="nowrap">' + (t.activity
@@ -531,6 +538,7 @@ function relRow(t) {
     '<span class="rel-title">' + esc(t.title) + "</span>" +
     (t.promoted ? '<span class="why">moved</span>' : "") +
     (t.stale ? '<span class="why stale">stale</span>' : "") +
+    discardChip(t) +
     labelChip(t.label) +
     '<span class="rel-state st-' + t.state + '">' + esc(stateName(t.state)) + "</span>" +
     '<span class="rel-ago">' + (t.activity ? esc(ago(t.activity.daysAgo)) : "") + "</span>";
@@ -639,7 +647,8 @@ function openModal(t) {
   $("#m-label").innerHTML = labelChip(t.label);
   $("#m-rel").innerHTML = relChip(t);
   const a = t.activity;
-  $("#m-state").textContent = stateName(t.state) + (t.done ? " · in done/" : "");
+  $("#m-state").textContent = (t.discarded ? "Discarded" : stateName(t.state)) +
+    (t.done ? " · in done/" : "");
   $("#m-state").className = "statepill" + (t.active ? " live" : t.stale ? " stale" : "");
   const seq = ((DATA && DATA.sequence) || [])
     .find((r) => r.project === t.projectKey && r.id === t.id);

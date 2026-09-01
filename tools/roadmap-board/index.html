@@ -158,6 +158,10 @@ details.rel[open] summary::before{transform:rotate(90deg)}
 .lbl-backlog{background:color-mix(in srgb,var(--backlog) 16%,transparent);color:var(--backlog)}
 .lbl-none{background:transparent;border:1px dashed var(--line);color:var(--muted);font-weight:500}
 .chip.lbl-bug,.chip.lbl-infra,.chip.lbl-feature,.chip.lbl-backlog{font-weight:600}
+/* Not a label - a second ending. Retired but never shipped, so it reads quietly
+   and does not borrow any label's colour. */
+.st-discarded{background:transparent;border:1px solid var(--line);color:var(--muted);
+  font-weight:500;text-transform:uppercase;font-size:10px;letter-spacing:.4px}
 
 .empty{color:var(--muted);text-align:center;padding:10px;font-size:12.5px}
 .empty.big{padding:60px 0;font-size:14px;width:100%}
