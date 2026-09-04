@@ -1,21 +1,26 @@
 ---
 description: List roadmap tasks by their stable ID, pick up a task by ID, or show a release's tickets
 argument-hint: [task ID, e.g. 7 — or a release, e.g. 2.0.0]
-allowed-tools: Glob, Read
+allowed-tools: Glob, Read, Edit
 ---
 
 Roadmap tasks are one markdown file per item in `docs/roadmap/` (adjust this path
-if your project keeps them elsewhere). Finished briefs move to
-`docs/roadmap/done/` and **keep their ID**. Each file starts with
+if your project keeps them elsewhere). Retired briefs — shipped or dropped —
+move to `docs/roadmap/done/` and **keep their ID**. Each file starts with
 `# Roadmap: <title>`, then a `**Label:**` line (bug / infra / feature /
 backlog), a `**Status:**` line, and optional `**Depends:**` and `**Release:**`
 lines — then the brief.
 
-The `**Status:**` line **starts with one of five keywords**, then an em dash and
+The `**Status:**` line **starts with one of six keywords**, then an em dash and
 a sentence: `backlog` (not committed to yet) · `planned` (committed and
 kickoff-ready) · `in progress` · `blocked` (something outside the brief must
-happen first) · `done`. `**Depends:**` lists the task IDs that must land first —
-hard blockers only, omitted when there are none.
+happen first) · `done` (shipped) · `discarded` (dropped without shipping).
+`done/` holds both endings, so a brief in there is only "done" if it says so —
+one that says `discarded` is reported as discarded, never as shipped.
+
+`**Depends:**` lists the task IDs that must land first — hard blockers only,
+omitted when there are none. A brief whose dependency is still open reads
+`blocked`: the two lines are halves of one statement.
 
 ## The ID is the number in the filename
 
@@ -94,6 +99,24 @@ ships, flip its `releases.md` status to `released <date>` — briefs that are do
 move to `done/` as usual; anything still open gets a decision: move it to the
 next release or drop the tag.
 
+## Statuses are part of the job, not a report about it
+
+Organizing tasks includes correcting what the list gets wrong. While reading the
+briefs, watch for the two disagreements that make a board lie, and name them in
+the closing lines — offering to fix them, and fixing them in place the moment
+the user says yes:
+
+- **Blocked but not saying so** — a brief whose `**Depends:**` names a task that
+  is not in `done/` while its own status reads `planned`, `backlog` or
+  `in progress`. It should read `blocked — waiting on <id>`.
+- **Waiting for something that already landed** — a brief reading `blocked`
+  whose named blockers are all in `done/`. It should read `planned` again.
+
+This holds in every session, not only under this command: the moment you tell
+the user that one task waits on another, write it into the brief before moving
+on. A dependency worked out during planning and reported only in prose leaves
+every brief unchanged — the plan *is* the edits.
+
 ## Behavior
 
 **If `$ARGUMENTS` is empty → list mode.**
@@ -109,15 +132,18 @@ Read each brief in `docs/roadmap/*.md` (just enough: title, `**Label:**`,
 - **Label** — the value from the `**Label:**` line (bug / infra / feature /
   backlog); `—` for a brief that predates the convention.
 - **Status** — the keyword from the `**Status:**` line (backlog / planned /
-  in progress / blocked), plus its `**Depends:**` IDs if it has any.
+  in progress / blocked), plus its `**Depends:**` IDs if it has any. Mark a
+  status that disagrees with the depends line, per the section above.
 - **Release** — the `**Release:**` value. Include this column only when at
   least one brief carries the line.
 - **Summary** — one sentence, from the Goal / opening context.
 
-Then one closing line. The done briefs do not need reading — their filenames
-carry everything it needs:
+Then one closing line. The retired briefs do not need reading — their filenames
+carry everything it needs — but call them *retired*, not *done*: that folder
+holds what was discarded as well as what shipped, and which is which only shows
+in their status lines. Read those only if the user asks.
 
-> Done: N briefs (IDs …) in `docs/roadmap/done/`. Next free ID: **NNN**.
+> Retired: N briefs (IDs …) in `docs/roadmap/done/`. Next free ID: **NNN**.
 
 Finally, remind the user they can run `/roadmap <ID>` — or just say "pick up
 roadmap task <ID>" in any session — to start one.
@@ -127,9 +153,10 @@ roadmap task <ID>" in any session — to start one.
 Match it (case-insensitively) against `releases.md` headings and the
 `**Release:**` values across active **and** done briefs. Print the release's
 `releases.md` header (target, status, description), then its tickets in the
-list-mode table plus a progress line: *N of M done*. If the argument matches
-nothing, say so and list the known releases. A bare number is always a task ID,
-never a release.
+list-mode table plus a progress line: *N of M done* — and *K discarded* when any
+were, because a dropped ticket is neither shipped nor still owed. If the
+argument matches nothing, say so and list the known releases. A bare number is
+always a task ID, never a release.
 
 **If `$ARGUMENTS` names an ID → pickup mode.**
 
@@ -138,14 +165,25 @@ Accept `7`, `07` and `007` as the same task.
 1. Resolve the ID against `docs/roadmap/*.md` **and** `docs/roadmap/done/*.md`.
    - No match → say so and list the valid IDs. Never quietly pick a neighbouring
      task; a wrong guess here starts the wrong work.
-   - Match inside `done/` → say the task is already done, show its status line,
-     and ask whether to reopen it before doing anything else.
+   - Match inside `done/` → say which ending it had, quoting the status line:
+     already shipped (`done`), or dropped (`discarded` — give the reason, it is
+     usually the answer to "why aren't we doing this"). Ask whether to reopen it
+     before doing anything else.
 2. Read that file in full — it is the kickoff brief.
 3. Confirm where the repo/app lives (run git/npm from the right folder).
-4. Restate the goal and scope in 2-3 lines, then propose a concrete first step
+4. **Check it is startable before starting.** If the status is `TBC` or the
+   brief carries open questions, it needs a decision first — surface them and
+   ask the user to decide rather than start coding. If its `**Depends:**` names
+   a task that is not in `done/`, do not start: say what it waits on, set the
+   status to `blocked — waiting on <id>` if it does not already say so, and
+   offer that blocker as the task to pick up instead. A `backlog` brief is not
+   blocked — picking it up *is* the decision to commit, so say so and relabel it
+   on the way past.
+5. **Set the status to `in progress`** — one edit to the `**Status:**` line,
+   with a sentence on what is being done — before the work starts, not after.
+   Nothing else records that this task is now taken.
+6. Restate the goal and scope in 2-3 lines, then propose a concrete first step
    and start work. Follow the file's "out of scope" / "explicitly not" notes.
-5. If the file's status is `TBC`, it needs a decision before building — surface
-   the open question(s) and ask the user to decide rather than start coding.
 
 ## Adopting the convention
 

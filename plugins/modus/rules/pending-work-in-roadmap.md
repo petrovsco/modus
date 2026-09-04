@@ -50,6 +50,12 @@ em dash is for a person; the first word is what tooling reads.
 | `done` | finished — the file lives in `done/` |
 | `discarded` | dropped without shipping — the file lives in `done/` too |
 
+Then an em dash and **one or two sentences** on where it actually stands. Not
+three paragraphs: a status line that has grown into a changelog is unreadable to
+both people and tools, and it is the first sign a brief has stopped being
+maintained. Long-running briefs keep their history in a `## Progress log`
+section of dated bullets right after the header instead.
+
 `done/` is the archive, not a trophy cabinet. A brief we decide **not** to do
 retires the same way a finished one does, but says so:
 `**Status:** discarded — <why, in one line>`. Two endings, two words — `done`
@@ -59,18 +65,19 @@ lives in the status line, never in the label: the label keeps saying what kind
 of work it *was*. Tools read the keyword and mark such a brief discarded rather
 than done, so a dropped brief never reads as a shipped one.
 
-Then an em dash and **one or two sentences** on where it actually stands. Not
-three paragraphs: a status line that has grown into a changelog is unreadable to
-both people and tools, and it is the first sign a brief has stopped being
-maintained. Long-running briefs keep their history in a `## Progress log`
-section of dated bullets right after the header instead.
+Discarding propagates. Anything that `**Depends:**` on the dropped brief is now
+waiting for something that will never land, so those briefs get a decision in
+the same edit — unblocked, re-pointed at whatever really blocks them, or
+discarded too.
 
 **Close on evidence, not on feeling.** Write each item in a brief's
 `## Acceptance` section as a `- [ ]` checkbox and tick it when it is true. All
 boxes ticked means the brief is `done` and moves to `done/`; an open box means it
-is not done, however long ago it started. Without this, briefs drift — a brief
-saying "in progress" for six weeks whose work shipped in week one is worse than
-no brief, because it makes the whole list untrustworthy.
+is not done, however long ago it started. A brief with open boxes that we have
+decided not to finish is `discarded`, not `done` — the boxes stay unticked and
+the status line says why. Without this, briefs drift — a brief saying "in
+progress" for six weeks whose work shipped in week one is worse than no brief,
+because it makes the whole list untrustworthy.
 
 **A new brief declares where it sits in the running order.** Ordering is not a
 separate planning artefact; it falls out of one optional header line:
@@ -82,8 +89,9 @@ separate planning artefact; it falls out of one optional header line:
 Hard blockers only, by task ID. A dependency parks the brief behind another one,
 so list only what genuinely parks it — a soft overlap ("check this doesn't fork
 the same model") is prose, not a dependency. Omit the line when nothing blocks
-it. Dependencies on a task already in `done/` are ignored, so a brief never has
-to be edited when its blocker lands.
+it. Dependencies on a task already in `done/` are ignored, so *this line* never
+has to be edited when its blocker lands — but the `**Status:**` line does, and
+that is on whoever lands the blocker. See below.
 
 Answer three questions when you create a brief, and write the answers into the
 header:
@@ -96,6 +104,44 @@ header:
 3. **What does it unblock?** → if the answer is an existing brief, add
    `**Depends:** <this id>` to *that* brief. A dependency is one edge and it has
    two ends; recording it on only one leaves the order wrong.
+
+**A status is maintained, not just set.** That line is the only place the state
+of the work is written down — it is what `/roadmap` lists and what a board's
+columns are derived from. A status that was true last week and has not been
+touched since is worse than none, because it is read as current.
+
+Four moments change one, and each is part of the work rather than bookkeeping
+for later — the edit belongs in the same commit as the change it describes:
+
+| When | The brief becomes |
+|---|---|
+| you start on it | `in progress` |
+| something outside it has to land first | `blocked` — naming what, plus a `**Depends:**` line when that something is another brief |
+| the thing it waited for lands | `planned` again, or `in progress` if you carry straight on |
+| it ships, or it is dropped | `done` or `discarded`, and the file moves to `done/` |
+
+**Saying it is not recording it.** The moment you tell the user a task is
+blocked — "we can't do 12 before 9 lands", "this needs the migration first" —
+you have discovered a fact about the roadmap, and the next thing you do is write
+it into the brief. A blocker that exists only in a chat message is gone when the
+session ends: the list still shows the task as ready, someone picks it up, and
+walks into the wall you already found.
+
+Planning is where this fails most, because planning is where blockers are found
+in bulk. Working out the order of five briefs and then reporting that order in
+prose leaves five briefs unchanged and the reasoning lost — **the plan is the
+edits to the briefs**, and the message to the user is a summary of them.
+
+**The depends line and the status line are two halves of one statement.** The
+`**Depends:**` line names what is in the way; the `**Status:**` keyword is what
+tooling groups by. A brief whose dependency has not landed reads `blocked`, not
+`planned` — writing only one of the two is what leaves a genuinely blocked task
+sitting in the Planned column.
+
+**Unblocking is the blocker's last step.** Before a brief moves into `done/`,
+look at what depends on it and take those briefs off `blocked`. Nobody else
+will: the dependent brief is not open in front of anyone, and left alone it
+reads blocked for weeks after the thing it waited for shipped.
 
 **A brief committed to a release says so.** One optional header line —
 `**Release:** 2.0.0` — one release per brief, kept when the brief moves to

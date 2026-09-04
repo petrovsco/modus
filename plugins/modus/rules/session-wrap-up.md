@@ -19,12 +19,20 @@ hard one (~195k). The user may also just say "wrap up." When the signal arrives:
    avoiding.
 2. **Checkpoint it**: run the project's full build (must pass), then commit and
    push per the repo's convention.
-3. **Hand off the remainder.** Write the remaining scope as a kickoff-ready
+3. **Leave the statuses true.** Update the `**Status:**` line of every brief the
+   session moved: the one worked on, anything discovered to be blocked (with its
+   `**Depends:**` line), anything the session unblocked, and anything finished
+   or dropped — which moves to `done/` saying `done` or `discarded`. A blocker
+   found this session and named only in the chat is lost the moment it ends.
+4. **Hand off the remainder.** Write the remaining scope as a kickoff-ready
    brief in `docs/roadmap/`, one file per item, named `NNN-<slug>.md`. Allocate
    the next free ID: the highest number across `docs/roadmap/` and
    `docs/roadmap/done/`, plus one. Include what's done, where it left off, and
    what's next, so a fresh session resumes cheaply.
-4. **Report the roadmap item's ID** to the user so they can run it in a new
+5. **Commit the bookkeeping too** — the status edits and the new brief, pushed
+   like any other change. A handoff that exists only in the working tree is not
+   a handoff.
+6. **Report the roadmap item's ID** to the user so they can run it in a new
    session (e.g. `/roadmap 7`). That number is permanent — it stays with the
    brief through renames and through the move into `done/`.
 
