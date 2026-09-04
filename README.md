@@ -93,7 +93,7 @@ plugin the imports simply resolve to nothing.
 ## How the pieces reinforce each other
 
 ```
-session-flow: context guard ──fires──▶ session-wrap-up rule ──hands off──▶ /roadmap (docs/roadmap/)
+session-flow: context guard ──at turn end──▶ session-wrap-up rule ──hands off──▶ /roadmap (docs/roadmap/)
                                               │
                                               └── each unit: build-before-push ──▶ direct-push (commit+push)
                                                                                           │

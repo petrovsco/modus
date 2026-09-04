@@ -21,6 +21,29 @@
           }
         ]
       }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/context-guard.mjs\"",
+            "statusMessage": "Checking context budget before stopping"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/context-guard.mjs\"",
+            "statusMessage": "Re-arming the context guard after compaction"
+          }
+        ]
+      }
     ]
   }
 }

@@ -1,7 +1,7 @@
 {
   "name": "session-flow",
-  "description": "Session discipline for long build sessions: a PostToolUse context guard that injects a wrap-up nudge at ~180k/~195k tokens, a memory-review nudge after each git commit, and /roadmap for kickoff-ready task briefs under docs/roadmap/, each carrying a permanent numeric ID in its filename.",
-  "version": "1.2.2",
+  "description": "Session discipline for long build sessions: a context guard that warns the user past ~90% of the window, asks the model once to wrap up when it is about to stop above that, and re-arms after each auto-compaction (PostToolUse + Stop + SessionStart, zero model tokens); a memory-review nudge after each git commit; and /roadmap for kickoff-ready task briefs under docs/roadmap/, each carrying a permanent numeric ID in its filename.",
+  "version": "1.3.0",
   "author": {
     "name": "Peter Petrov"
   }
