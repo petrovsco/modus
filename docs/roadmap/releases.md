@@ -12,7 +12,7 @@ declared, scoped by briefs, and bumped only when it ships. See README →
 ## session-flow 1.3.0
 
 **Target:** 2026-09-04
-**Status:** planned
+**Status:** released 2026-09-04
 
 The context guard stops interrupting work mid-run: it warns the user past the
 soft threshold, asks the model to wrap up once when it is about to stop, and

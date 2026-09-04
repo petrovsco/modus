@@ -1,7 +1,7 @@
 # Roadmap: Context guard — wrap up at turn end, not mid-run
 
 **Label:** infra
-**Status:** in progress — implementing as session-flow 1.3.0
+**Status:** done — shipped as session-flow 1.3.0 on 2026-09-04 (commit 16ae258); installed on WSL and Windows for all four consumers
 **Release:** session-flow 1.3.0
 **Kickoff:** start a fresh session with this file as the brief.
 **Origin:** 2026-09-04, from the question whether interrupting an active run at ~180k is pointless now that Claude Code compacts instead of ending the session.
@@ -36,10 +36,10 @@ assumed a 200k window (18% on a `[1m]` model). Thresholds are now 90% / 97.5% of
 
 ## Acceptance
 
-- [ ] PostToolUse emits a user-visible `systemMessage` only; no `additionalContext`
-- [ ] Stop blocks once per cycle above the soft threshold with the protocol as reason; silent when `stop_hook_active`
-- [ ] SessionStart with `source: compact` resets the state and injects the confirm-hand-off line; other sources are ignored
-- [ ] The state re-arms when occupancy drops below the soft threshold
-- [ ] `CTX_GUARD_WINDOW` sets the window; soft/hard default to 90% / 97.5% of it; absolute overrides still work
-- [ ] session-wrap-up rule, README, catalog and plugin description say what the guard now does
-- [ ] session-flow 1.3.0 installed on WSL and Windows for every consumer (tekio, bubolazi-workspace, lumi-workspace, feya-workspace/feyabuild); modus 1.3.2 too
+- [x] PostToolUse emits a user-visible `systemMessage` only; no `additionalContext`
+- [x] Stop blocks once per cycle above the soft threshold with the protocol as reason; silent when `stop_hook_active`
+- [x] SessionStart with `source: compact` resets the state and injects the confirm-hand-off line; other sources are ignored
+- [x] The state re-arms when occupancy drops below the soft threshold
+- [x] `CTX_GUARD_WINDOW` sets the window; soft/hard default to 90% / 97.5% of it; absolute overrides still work
+- [x] session-wrap-up rule, README, catalog and plugin description say what the guard now does
+- [x] session-flow 1.3.0 installed on WSL and Windows for every consumer (tekio, bubolazi-workspace, lumi-workspace, feya-workspace/feyabuild); modus 1.3.2 too
