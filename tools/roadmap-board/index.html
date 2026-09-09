@@ -204,6 +204,38 @@ table.list td .pdot{margin-right:6px}
 .md .tbl{overflow-x:auto}
 .md table{border-collapse:collapse;margin:10px 0;font-size:12.5px}
 .md th,.md td{border:1px solid var(--line);padding:5px 9px;text-align:left}
+
+/* --- drag a card to write its Status line -------------------------------- */
+.card[draggable=true]{cursor:grab}
+.card.dragging{opacity:.45}
+.col-body.over{outline:2px dashed var(--accent);outline-offset:-5px;border-radius:10px;
+  background:color-mix(in srgb,var(--accent) 9%,transparent)}
+.col-body.over-no{outline:2px dashed var(--bug);outline-offset:-5px;border-radius:10px;
+  background:color-mix(in srgb,var(--bug) 8%,transparent)}
+
+#drop{position:fixed;inset:0;background:rgba(10,12,16,.5);backdrop-filter:blur(2px);
+  display:flex;align-items:center;justify-content:center;padding:16px;z-index:60}
+.d-panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;width:100%;
+  max-width:520px;padding:20px 22px;box-shadow:0 10px 40px rgba(0,0,0,.35)}
+.d-head{color:var(--muted);font-size:12.5px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+#d-title{margin:6px 0 14px;font-size:16px;line-height:1.35}
+.d-lab{display:block;font-size:13px;margin-bottom:6px}
+#d-note{width:100%;font:inherit;color:var(--text);background:var(--panel2);border:1px solid var(--line);
+  border-radius:8px;padding:8px 10px;resize:vertical;min-height:64px}
+#d-note:focus{outline:none;border-color:var(--accent)}
+.d-was{color:var(--muted);font-size:12px;margin-top:8px;line-height:1.4}
+.d-was b{font-weight:600;color:var(--text)}
+.d-btns{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+button.primary:hover{filter:brightness(1.08)}
+
+#toasts{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:70;
+  display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none}
+.toast{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--live);
+  border-radius:9px;padding:9px 14px;font-size:12.5px;max-width:min(620px,92vw);
+  box-shadow:0 6px 24px rgba(0,0,0,.22)}
+.toast.bad{border-left-color:var(--bug)}
+.toast.warn{border-left-color:var(--stale)}
 </style>
 </head>
 <body>
@@ -260,6 +292,22 @@ table.list td .pdot{margin-right:6px}
     <div id="m-body" class="md"></div>
   </div>
 </div>
+
+<div id="drop" hidden>
+  <div class="d-panel">
+    <div class="d-head">Move <span id="d-ref" class="ref"></span> to <b id="d-col"></b></div>
+    <h3 id="d-title"></h3>
+    <label class="d-lab" for="d-note" id="d-lab"></label>
+    <textarea id="d-note" maxlength="300" placeholder="one or two sentences"></textarea>
+    <div class="d-was">Replacing: <b id="d-was"></b></div>
+    <div class="d-btns">
+      <button type="button" id="d-cancel">Cancel</button>
+      <button type="button" id="d-save" class="primary">Write it</button>
+    </div>
+  </div>
+</div>
+
+<div id="toasts"></div>
 
 <script src="app.js"></script>
 </body>

@@ -1,6 +1,6 @@
 # roadmap-board
 
-A local, read-only JIRA/Trello-style web board over every project's
+A local JIRA/Trello-style web board over every project's
 `docs/roadmap/` — the modus roadmap convention (one brief per task named
 `NNN-<slug>.md`, finished briefs retired to `done/` keeping their ID, a
 `**Label:**` line and a free-text `**Status:**` line under the title).
@@ -26,10 +26,15 @@ plain repos (`tekio/docs/roadmap`) and workspace-nested ones
 python3 server.py ~/Projects/tekio            # explicit projects only
 python3 server.py --root /some/other/folder   # discover under a different root
 python3 server.py --port 5000
+python3 server.py --read-only                 # refuse the one write (see below)
 ```
 
 The scan happens on every `/api/board` request, so the **Refresh** button in
 the page always shows the current state of the files. Binds to 127.0.0.1 only.
+
+It is a read of the files everywhere except one gesture: dragging a card
+between columns rewrites that brief's `**Status:**` line, and nothing else.
+See **Dragging a card** below, or pass `--read-only` to switch it off.
 
 ## What the board shows
 
@@ -128,7 +133,7 @@ files:
 - A task whose status *declares* in progress but has no activity is marked
   **stale** — that is the "which of these am I actually doing?" answer.
 - Nothing is written back to the brief. To make the board's guess permanent,
-  edit the `**Status:**` line yourself.
+  drag the card (below) or edit the `**Status:**` line yourself.
 
 The scan is two git calls per repo (a path-limited `--name-only` log over the
 roadmap folder, plus a `--grep` log with no diff at all) over a 90-day window,
@@ -172,11 +177,50 @@ overlap ("check this doesn't fork the same model") belongs in prose. Omit the
 line when there is nothing. Dependencies pointing at a task already in `done/`
 are ignored, so a brief does not have to be edited when its blocker lands.
 
+## Dragging a card — the one thing that writes
+
+Drag a card into another column and the board rewrites that brief's
+`**Status:**` line. That is the whole write path: one line, of one file. The
+rest of the brief is left byte-for-byte alone, and a status that wrapped over
+two lines is replaced whole rather than leaving its tail behind as a stray
+paragraph.
+
+- **The drop asks for the sentence.** A status line is
+  `keyword — one or two sentences for a person`; the column only supplies the
+  keyword. Carrying the old sentence across would manufacture lines like
+  `blocked — shipped last week`, so the drop opens a box, shows the line it is
+  about to replace, and cancelling writes nothing. Enter saves, Shift+Enter is
+  a newline, Escape cancels.
+- **Four columns, not six.** Backlog, Planned, In progress and Blocked.
+  *Other* is not a state anything should be moved *into* — it is what an
+  unrecognized status falls through to. **Done** is refused with a message,
+  because retiring a brief moves the file into `done/` and takes every brief
+  that `**Depends:**` on it off blocked first: that is work, not a gesture.
+  Cards already in `done/` do not lift at all.
+- **Only while columns are states.** Grouped by label, project or release the
+  same gesture would have to edit a different field, which is a different
+  decision; dragging is simply off there.
+- **Where the board and the file disagree.** A card that recent commits pushed
+  into In progress carries whatever its file says. Dragging it writes the drop —
+  but a card dropped back into Planned while those commits are still inside the
+  7-day window is promoted again on the next scan. The board says so after the
+  write rather than letting a correct edit look like a lost one.
+- **Blocked is half a statement.** The board writes the status keyword; if the
+  blocker is another brief, its ID still belongs in a `**Depends:**` line, and
+  that is a file edit. The prompt says so.
+
+The server writes to your repo, so a page on any other site must not be able to
+drive it. `POST /api/status` requires a loopback `Host` (DNS rebinding), a
+same-origin `Origin`, and a request header no cross-site form can set — which
+forces a CORS preflight this server does not answer. `--read-only` turns the
+route off entirely.
+
 ## Not (yet) in scope
 
 - **Repo-URL sources** (browse projects not checked out locally) — planned;
   the brief is `docs/roadmap/001-roadmap-board-repo-url-sources.md`. The seam
   is `BoardSource` in `server.py`: a remote source must produce the same
   per-project dicts the local scanner does.
-- Editing or moving cards from the browser — the files stay the source of
-  truth; a write path is its own decision.
+- Editing anything but the `**Status:**` line — a card's label, release,
+  dependencies and title are still file edits, and creating or retiring a brief
+  is deliberately not a drag.

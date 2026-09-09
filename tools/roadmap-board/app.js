@@ -20,7 +20,19 @@ const LABEL_DOT = { bug: "#e5484d", infra: "#8e4ec6", feature: "#2f9e63", backlo
 const PROJECT_COLORS = ["#4f6ef7", "#0ea5a4", "#e8842c", "#d6549e", "#7a63e0", "#5f8f2f", "#c8a232", "#3f8cd6"];
 const REL_DOT = "#0e8f8e";
 
+/* Columns a drag may write, and the sentence each one asks for. Done is missing
+   on purpose: retiring a brief moves the file into done/ and unblocks whatever
+   depended on it first, which is work rather than a gesture. */
+const WRITABLE = {
+  backlog:    "Why is it parked? What decision or context does it need?",
+  planned:    "Where does it stand now that it is committed?",
+  inprogress: "What are you starting, in a sentence?",
+  blocked:    "What has to land first? If that is another brief, add a **Depends:** line to the file too.",
+};
+
 let DATA = null;
+let DRAG = null;      // the card being dragged, or null
+let PENDING = null;   // {task, state} waiting on the sentence the drop asked for
 const F = { q: "", projects: new Set(), labels: new Set(), releases: new Set(), showDone: true, group: "state", view: "board" };
 
 /* ---------- helpers ---------- */
@@ -438,7 +450,126 @@ function card(t) {
     activityHTML(t) +
     '<div class="card-foot"><span class="pdot" style="background:' + t.color + '"></span>' + esc(t.project) + "</div>";
   el.addEventListener("click", () => openModal(t));
+  // Dragging writes the **Status:** line, so it only means anything while the
+  // columns *are* the states. Grouped by label or release, the same gesture
+  // would have to edit a different field - a different decision.
+  if (F.group === "state" && !t.done) {
+    el.draggable = true;
+    el.addEventListener("dragstart", (e) => {
+      DRAG = t;
+      el.classList.add("dragging");
+      e.dataTransfer.effectAllowed = "move";
+      e.dataTransfer.setData("text/plain", "#" + t.id);   // Firefox needs a payload
+    });
+    el.addEventListener("dragend", () => {
+      DRAG = null;
+      el.classList.remove("dragging");
+      $$(".col-body").forEach((b) => b.classList.remove("over", "over-no"));
+    });
+  }
   return el;
+}
+
+/* ---------- drag to move ----------
+   The board is a read of the files everywhere except here. A drag rewrites one
+   line of one brief: the **Status:** keyword, plus the sentence the drop asks
+   for. Nothing else in the file is touched. */
+
+function dropTargets(body, colKey) {
+  const ok = () => DRAG && colKey !== DRAG.state && !!WRITABLE[colKey];
+  body.addEventListener("dragover", (e) => {
+    if (!DRAG || colKey === DRAG.state) return;
+    e.preventDefault();
+    // Always "move", even over a column that will refuse: dropEffect "none"
+    // suppresses the drop event, and a Done drop that says nothing is worse
+    // than one that explains itself. The red outline is the warning.
+    e.dataTransfer.dropEffect = "move";
+    body.classList.toggle("over", ok());
+    body.classList.toggle("over-no", !ok());
+  });
+  body.addEventListener("dragleave", (e) => {
+    if (!body.contains(e.relatedTarget)) body.classList.remove("over", "over-no");
+  });
+  body.addEventListener("drop", (e) => {
+    e.preventDefault();
+    const t = DRAG;
+    body.classList.remove("over", "over-no");
+    if (!t || colKey === t.state) return;
+    if (colKey === "done") {
+      toast("Done is not a drag: the file moves into done/, and every brief that " +
+            "depends on #" + t.id + " comes off blocked first.", "warn");
+      return;
+    }
+    if (!WRITABLE[colKey]) return;
+    askNote(t, colKey);
+  });
+}
+
+/* The keyword is all a drag can know; the sentence after it is the half a
+   person writes. Inheriting the old one manufactures lines like
+   "blocked - shipped last week", so the drop asks for it. */
+function askNote(t, state) {
+  PENDING = { task: t, state: state };
+  $("#d-ref").textContent = "#" + t.id;
+  $("#d-col").textContent = stateName(state);
+  $("#d-title").textContent = t.title;
+  $("#d-lab").textContent = WRITABLE[state];
+  $("#d-was").textContent = t.status;
+  $("#d-note").value = "";
+  $("#drop").hidden = false;
+  $("#d-note").focus();
+}
+
+function closeDrop() {
+  PENDING = null;
+  $("#drop").hidden = true;
+}
+
+async function commitDrop() {
+  if (!PENDING) return;
+  const task = PENDING.task, state = PENDING.state;
+  const note = $("#d-note").value.trim();
+  if (!note) {
+    $("#d-note").focus();
+    return;
+  }
+  $("#d-save").disabled = true;
+  let out;
+  try {
+    const res = await fetch("/api/status", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Roadmap-Board": "write" },
+      body: JSON.stringify({ project: task.projectKey, id: task.id, state: state, note: note }),
+    });
+    out = await res.json();
+  } catch (err) {
+    out = { ok: false, error: String(err) };
+  }
+  $("#d-save").disabled = false;
+  if (!out.ok) {
+    toast(out.error || "the write was refused", "bad");
+    return;
+  }
+  closeDrop();
+  // The board reads git as well as the file. A card dropped back into Planned
+  // while its code commits are still recent is promoted again on the next scan
+  // - say so, or a correct write looks like a lost one.
+  const promotable = state === "planned" || state === "backlog";
+  if (promotable && task.active && task.activity && !task.activity.docsOnly) {
+    toast("Written — but #" + task.id + " has commits from the last few days, so the board " +
+          "still shows it in In progress. The file now says " + stateName(state) + ".", "warn");
+  } else {
+    toast("#" + task.id + " → " + stateName(state) + " · wrote " + out.file);
+  }
+  await load();
+}
+
+function toast(msg, kind) {
+  const el = document.createElement("div");
+  el.className = "toast" + (kind ? " " + kind : "");
+  el.textContent = msg;
+  $("#toasts").appendChild(el);
+  setTimeout(() => el.remove(), kind === "warn" ? 9000 : 5500);
 }
 
 function renderBoard(tasks) {
@@ -456,6 +587,7 @@ function renderBoard(tasks) {
     col.appendChild(head);
     const body = document.createElement("div");
     body.className = "col-body";
+    if (F.group === "state") dropTargets(body, g.key);
     // In progress reads most-recently-worked first; everywhere else, by ID.
     const items = g.items.slice().sort(g.key === "inprogress" ? byActivity : byProjectAndId);
     for (const t of items) body.appendChild(card(t));
@@ -853,7 +985,18 @@ function boot() {
   $("#modal").addEventListener("click", (e) => {
     if (e.target === $("#modal") || e.target.closest(".m-close")) closeModal();
   });
-  document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeModal(); });
+  $("#d-cancel").addEventListener("click", closeDrop);
+  $("#d-save").addEventListener("click", commitDrop);
+  $("#drop").addEventListener("click", (e) => { if (e.target === $("#drop")) closeDrop(); });
+  // Enter saves, Shift+Enter is a newline - the box is one or two sentences.
+  $("#d-note").addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); commitDrop(); }
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Escape") return;
+    if (!$("#drop").hidden) closeDrop();
+    else closeModal();
+  });
   load();
 }
 

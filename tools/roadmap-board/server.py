@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Roadmap Board - a local, read-only JIRA/Trello-style board over docs/roadmap/.
+"""Roadmap Board - a local JIRA/Trello-style board over docs/roadmap/.
 
 Scans projects for the modus roadmap convention (one brief per task named
 NNN-<slug>.md, finished briefs retired to done/ keeping their ID) and serves
@@ -10,6 +10,10 @@ Usage:
   python3 server.py <project-dir> ...      # explicit projects only (or roadmap dirs)
   python3 server.py --root <dir>           # discover under a different root
   python3 server.py --port 4830 --host 127.0.0.1
+  python3 server.py --read-only            # refuse POST /api/status (drag-to-move)
+
+It reads the briefs; the one thing it writes is a **Status:** line, when a card
+is dragged into another column. See README.md -> "Dragging a card".
 """
 
 from __future__ import annotations
@@ -22,6 +26,7 @@ import time
 from datetime import date, datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path, PurePosixPath
+from urllib.parse import urlsplit
 
 TOOL_DIR = Path(__file__).resolve().parent
 DEFAULT_ROOT = TOOL_DIR.parents[2]  # <root>/modus/tools/roadmap-board -> <root>
@@ -71,6 +76,24 @@ STATE_PREFIXES = (
 # must not read as a shipped one. It stays in the Done column (a column nobody
 # would scan is not worth one) carrying a "discarded" mark instead.
 DISCARDED_PREFIXES = ("discarded", "dropped", "abandoned", "won't do", "wont do")
+
+# --- the write path ---------------------------------------------------------
+# Dragging a card writes ONE line of ONE file: the **Status:** keyword plus the
+# sentence the drop asked for. This is the inverse of STATE_PREFIXES, pinned to
+# the spelling the roadmap rules use rather than to any of the aliases we read.
+#
+# Done is absent on purpose. Retiring a brief moves the file into done/ and,
+# before that, takes every brief depending on it off blocked - that is work, not
+# a gesture, and a drag that did it silently would be the board's most dangerous
+# feature rather than its handiest.
+WRITABLE_STATES = {
+    "backlog": "backlog",
+    "planned": "planned",
+    "inprogress": "in progress",
+    "blocked": "blocked",
+}
+STATUS_LINE_RE = re.compile(r"^\*\*Status:\*\*\s*(.*)$")
+MAX_NOTE = 300           # a status line is one or two sentences, not a changelog
 
 # --- observed activity -------------------------------------------------------
 # The Status line records what was *decided*; git records what was *done*. A
@@ -335,6 +358,75 @@ def parse_brief(path: Path, done: bool) -> dict:
         "summary": summary,
         "body": text,
     }
+
+
+class WriteRefused(Exception):
+    """The write path said no. The message is for the user, not a traceback."""
+
+
+def find_brief(d: Path, task_id: int):
+    """The brief numbered task_id in one directory, or None. The number in the
+    filename is the ID; the slug after it may be anything and may have changed."""
+    if not d.is_dir():
+        return None
+    for f in sorted(d.iterdir()):
+        if not f.is_file():
+            continue
+        m = TASK_RE.match(f.name)
+        if m and int(m.group(1)) == task_id:
+            return f
+    return None
+
+
+def write_status(rm: Path, task_id: int, state: str, note: str) -> dict:
+    """Rewrite one brief's **Status:** line to "<keyword> - <note>".
+
+    The only mutation the board performs. Everything else in the file is left
+    byte-for-byte alone, and a status that wrapped over several lines is
+    replaced whole - leaving the continuation behind would turn the tail of the
+    old sentence into a stray paragraph under the header."""
+    keyword = WRITABLE_STATES.get(state)
+    if keyword is None:
+        raise WriteRefused("that column cannot be set by dragging a card")
+    note = " ".join(note.split())
+    if not note:
+        raise WriteRefused("a status is a keyword and a sentence - the sentence is missing")
+    if len(note) > MAX_NOTE:
+        raise WriteRefused(f"keep the sentence under {MAX_NOTE} characters")
+
+    path = find_brief(rm, task_id)
+    if path is None:
+        if find_brief(rm / "done", task_id):
+            raise WriteRefused(f"task {task_id} is retired in done/ - reopening it is a file move, "
+                               "not a drag")
+        raise WriteRefused(f"no brief numbered {task_id} in this project")
+
+    # Bytes, not read_text: universal newlines would translate CRLF away before
+    # we could notice it, and rewriting a CRLF brief as LF makes a one-line edit
+    # land in git as a whole-file diff.
+    raw = path.read_bytes().decode("utf-8")
+    nl = "\r\n" if "\r\n" in raw else "\n"
+    lines = raw.replace("\r\n", "\n").replace("\r", "\n").split("\n")
+
+    at = next((i for i, ln in enumerate(lines) if STATUS_LINE_RE.match(ln.strip())), None)
+    if at is None:
+        raise WriteRefused("this brief has no **Status:** line to rewrite")
+
+    # A wrapped value ends where parse_brief stops joining it: at a blank line,
+    # a heading, a fence, or the next **Key:** line.
+    end = at + 1
+    while end < len(lines):
+        nxt = lines[end].strip()
+        if not nxt or nxt.startswith("#") or nxt.startswith("```") or META_RE.match(nxt):
+            break
+        end += 1
+
+    before = " ".join(" ".join(lines[at:end]).split())
+    after = f"**Status:** {keyword} \u2014 {note}"
+    lines[at:end] = [after]
+    path.write_bytes(nl.join(lines).encode("utf-8"))
+    return {"file": path.name, "id": task_id, "state": state,
+            "before": STATUS_LINE_RE.match(before).group(1).strip(), "after": after}
 
 
 def parse_releases(rm: Path) -> list:
@@ -646,6 +738,12 @@ class BoardSource:
     def __init__(self, args):
         self.args = args
 
+    def roadmap_for(self, key: str):
+        """The roadmap directory a project key names, or None. Resolved fresh so
+        a project appearing since start-up is writable without a restart."""
+        items, _ = resolve_targets(self.args)
+        return next((rm for rm, _n, k in items if k == key), None)
+
     def build(self) -> dict:
         t0 = time.time()
         items, desc = resolve_targets(self.args)
@@ -675,6 +773,66 @@ def make_handler(source: BoardSource):
                 self.reply(200, "application/json; charset=utf-8", body)
             else:
                 self.reply(404, "text/plain; charset=utf-8", b"not found")
+
+        # Dragging a card posts here. The board writes to the user's repo, so a
+        # page on any other site must not be able to drive it: the request has to
+        # arrive on loopback (DNS rebinding), carry a header no cross-site form
+        # can set (it forces a preflight, which this server answers 404), and
+        # declare no foreign Origin.
+        def guard(self):
+            host = (self.headers.get("Host") or "").split(":")[0].strip("[]")
+            if host not in ("127.0.0.1", "localhost", "::1"):
+                return "requests must arrive on the loopback address"
+            if self.headers.get("X-Roadmap-Board") != "write":
+                return "missing the board's own request header"
+            origin = self.headers.get("Origin")
+            if origin and (urlsplit(origin).hostname or "") not in ("127.0.0.1", "localhost", "::1"):
+                return "cross-site request refused"
+            return None
+
+        def do_POST(self):
+            if self.path.split("?", 1)[0] != "/api/status":
+                self.reply(404, "text/plain; charset=utf-8", b"not found")
+                return
+            if getattr(source.args, "read_only", False):
+                self.refuse(403, "the board is running --read-only")
+                return
+            bad = self.guard()
+            if bad:
+                self.refuse(403, bad)
+                return
+            try:
+                n = int(self.headers.get("Content-Length") or 0)
+                if n > 8192:
+                    raise ValueError("body too large")
+                payload = json.loads(self.rfile.read(n) or b"{}")
+                key = str(payload["project"])
+                task_id = int(payload["id"])
+                state = str(payload["state"])
+                note = str(payload.get("note", ""))
+            except (ValueError, TypeError, KeyError, UnicodeDecodeError):
+                self.refuse(400, "unreadable request")
+                return
+
+            rm = source.roadmap_for(key)
+            if rm is None:
+                self.refuse(404, f"unknown project {key!r}")
+                return
+            try:
+                res = write_status(rm, task_id, state, note)
+            except WriteRefused as e:
+                self.refuse(409, str(e))
+                return
+            except OSError as e:
+                self.refuse(500, f"could not write the brief: {e}")
+                return
+            print(f"  wrote {res['file']} in {rm} -> {res['after']}")
+            self.reply(200, "application/json; charset=utf-8",
+                       json.dumps({"ok": True, **res}).encode("utf-8"))
+
+        def refuse(self, code, msg):
+            self.reply(code, "application/json; charset=utf-8",
+                       json.dumps({"ok": False, "error": msg}).encode("utf-8"))
 
         def serve_static(self, name):
             f = TOOL_DIR / name
@@ -709,6 +867,9 @@ def main():
                          "(default: the folder two levels above this repo)")
     ap.add_argument("--port", type=int, default=4830)
     ap.add_argument("--host", default="127.0.0.1")
+    ap.add_argument("--read-only", action="store_true",
+                    help="refuse the write path: dragging a card cannot rewrite "
+                         "a brief's **Status:** line")
     ap.add_argument("--no-git", action="store_true",
                     help="skip the git activity scan (columns then follow the "
                          "**Status:** line alone)")
@@ -722,6 +883,9 @@ def main():
               f"   {p['activeCount']} active   next ID {p['nextId']:03d}   {p['path']}")
     if not board["projects"]:
         print("  (no docs/roadmap folders found — pass project paths or --root)")
+
+    print("  writes: " + ("off (--read-only)" if args.read_only else
+                         "drag a card between columns to rewrite its **Status:** line"))
 
     srv = ThreadingHTTPServer((args.host, args.port), make_handler(source))
     print(f"\n→ http://{args.host}:{args.port}   (Ctrl+C to stop)")

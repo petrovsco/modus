@@ -105,10 +105,12 @@ session-flow: context guard ──at turn end──▶ session-wrap-up rule ─�
 
 ## Tools
 
-`tools/roadmap-board/` — a local, read-only JIRA/Trello-style web board over
-every project's `docs/roadmap/` briefs (ticket IDs, labels, states, releases,
+`tools/roadmap-board/` — a local JIRA/Trello-style web board over every
+project's `docs/roadmap/` briefs (ticket IDs, labels, states, releases,
 full-brief view). Run `python3 tools/roadmap-board/server.py` →
-http://127.0.0.1:4830. See its README; repo-URL sources are roadmap task 1.
+http://127.0.0.1:4830. It reads the files; the one thing it writes is a
+brief's `**Status:**` line, when you drag its card to another column. See its
+README; repo-URL sources are roadmap task 1.
 
 ## Secrets
 
