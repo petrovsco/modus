@@ -42,7 +42,7 @@ modus/
 ## One-time setup (per machine)
 
 ```
-git clone git@github.com:petrovsco/modus.git ~/Projects/modus
+git clone git@github.com:shamatoff/modus.git ~/Projects/modus
 ```
 
 Then in any Claude Code session:
