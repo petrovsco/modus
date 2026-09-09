@@ -28,6 +28,13 @@ the local projects — same cards, IDs, labels, states.
 - Auth for private repos comes from the environment (e.g. `GITHUB_TOKEN`) —
   never stored in this repo.
 
+## Task 4 may shrink this
+
+If the specs move into one repository of their own (task 4), a single local
+clone already covers every project whether or not its code is checked out, and
+this brief shrinks to "read that repo from its URL" — or stops being needed at
+all. Re-read task 4 before starting here.
+
 ## Explicitly not
 
 - No write path (creating/moving briefs from the browser) — separate decision.
