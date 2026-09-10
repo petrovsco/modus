@@ -28,12 +28,16 @@ the local projects — same cards, IDs, labels, states.
 - Auth for private repos comes from the environment (e.g. `GITHUB_TOKEN`) —
   never stored in this repo.
 
-## Task 4 may shrink this
+## What task 4 changed here
 
-If the specs move into one repository of their own (task 4), a single local
-clone already covers every project whether or not its code is checked out, and
-this brief shrinks to "read that repo from its URL" — or stops being needed at
-all. Re-read task 4 before starting here.
+Task 4 decided on **one specification repo per project** (`tekio.rfcs`,
+`lumi.rfcs`, …), not one central one — so this brief is not cancelled by it.
+What changes is the cost on both sides: a specs repo is text only, a few
+hundred kilobytes, with no build and no branches, so cloning all of them is
+cheap and the sparse-checkout mechanism below is overkill for them. The remote
+source is still what lets the board show a project on a machine where nothing
+is checked out. Re-read task 7 first — it changes the discovery code this brief
+extends.
 
 ## Explicitly not
 

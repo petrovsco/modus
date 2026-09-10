@@ -1,9 +1,10 @@
 # Roadmap: Roadmap board — drag a card to change its target release
 
 **Label:** feature
-**Status:** planned — the board's second write, after the Status line (task 3)
+**Status:** blocked — task 7 rewrites the same write path for frontmatter files; building this on the old line-writer would mean writing it twice
 **Kickoff:** start a fresh session with this file as the brief.
 **Origin:** 2026-09-09, from "we need to create another task, for changing a destination version of a task".
+**Depends:** 007
 
 ## Goal
 
