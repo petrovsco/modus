@@ -26,6 +26,11 @@ The test is whether the sentence would still be true for a different user.
 | "160 g protein/day, because he weighs 82 kg" | "Protein target, 1.6–2.2 g/kg, supplied as input" |
 | "<child's name> rejects soft, wet textures" | "A user may reject foods by texture rather than by ingredient" |
 | "B1 of the <employer> readiness plan" | "Exercises WebSocket + OIDC + a NoSQL store in one service" |
+| "the user's quads are the missing volume" | "the body map names the muscle with the largest gap" |
+
+**Including here.** The left column is written with placeholders on purpose: a rule
+that teaches by naming a real child and a real employer publishes them every time the
+rule is read. If you need a concrete example, invent one.
 
 If the personal version is what makes the requirement understandable, the requirement
 is under-specified — fix the requirement, don't paste the person in.
