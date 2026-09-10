@@ -4,20 +4,19 @@
   "entries": [
     {
       "id": "session-flow",
-      "title": "session-flow plugin (context guard + memory nudge + /roadmap)",
+      "title": "session-flow plugin (context guard + memory nudge + /roadmap over RFCs)",
       "category": "plugin",
       "scope": "project",
-      "summary": "Context-budget guard (zero model tokens): a terminal warning for the user past ~90% of the window, one wrap-up request to the model when it is about to stop above that, and a re-arm plus hand-off check after each auto-compaction; a memory-review nudge after each git commit; and the /roadmap command over docs/roadmap/ task briefs — each brief named NNN-<slug>.md, where the number is a permanent task ID that survives renames and the move into done/.",
+      "summary": "Context-budget guard (zero model tokens): a terminal warning for the user past ~90% of the window, one wrap-up request to the model when it is about to stop above that, and a re-arm plus hand-off check after each auto-compaction; a memory-review nudge after each git commit; and the /roadmap command over the project's <project>.rfcs specification repo — each RFC named NNNN-<slug>.md, where the number is a permanent ID that survives renames and the move into done/. Falls back to docs/roadmap/ for projects not migrated yet.",
       "assets": ["plugins/session-flow"],
       "install": [
         "Merge {\"enabledPlugins\": {\"session-flow@modus\": true}} into <project>/.claude/settings.local.json (or settings.json to commit the choice).",
-        "Create docs/roadmap/ and docs/roadmap/done/ (where task briefs live, and where finished ones retire keeping their ID).",
-        "If the repo already has un-numbered briefs, seed the IDs once in creation order per the 'Adopting the convention' section of the /roadmap command.",
+        "Make sure the project has a <project>.rfcs repo (see the rfcs-repo entry); /roadmap falls back to docs/roadmap/ until it does.",
         "Remove legacy copies if present: .claude/hooks/context-guard.mjs, .claude/commands/roadmap.md, and the matching hook entries in settings.local.json.",
         "Restart the session so the plugin loads."
       ],
       "recommendWhen": "Project has a build + commit workflow and sessions get long.",
-      "dependsOn": ["session-wrap-up"],
+      "dependsOn": ["session-wrap-up", "rfcs-repo"],
       "requiresSecret": false
     },
     {
@@ -84,19 +83,38 @@
       "requiresSecret": false
     },
     {
-      "id": "pending-work-in-roadmap",
-      "title": "Pending work lives in the roadmap (house rule)",
+      "id": "rfc-convention",
+      "title": "Specifications live in the project RFC repository (house rule)",
       "category": "rule",
       "scope": "project",
-      "summary": "Reference docs (doctrine, indexes, ADRs, READMEs) must not carry follow-ups. Every pending item is one file in docs/roadmap/ named NNN-<slug>.md, so /roadmap can see it and the number is a stable handle for it. Every active brief carries a **Label:** line (bug / infra / feature / backlog) above its **Status:** line, and that status is maintained as the work moves — in progress when started, blocked (with **Depends:**) the moment a blocker is found, done or discarded when it retires to done/.",
-      "assets": ["plugins/modus/rules/pending-work-in-roadmap.md"],
+      "summary": "Planning leaves the code repo. Every project that plans its work keeps it in a separate <project>.rfcs repository: numbered RFCs in rfcs/ (NNNN-<slug>.md with YAML frontmatter — title, authors, created, last_updated, status, status_note, label, depends, release), retired ones in rfcs/done/ keeping their number, the release registry in rfcs/releases.md, and standing reference (doctrine, design system, schema) at the repo root. Shape borrowed from openclaw/rfcs; the six-keyword status model, labels, depends and releases are ours. Replaces the pending-work-in-roadmap rule.",
+      "assets": ["plugins/modus/rules/rfc-convention.md"],
       "install": [
         "Ensure the core modus plugin is enabled at user scope (it syncs rules to ~/.claude/modus/rules/).",
-        "Add to the project CLAUDE.md under '## House rules': @~/.claude/modus/rules/pending-work-in-roadmap.md",
-        "If the repo's briefs do not live in docs/roadmap/, name the real directory in CLAUDE.md."
+        "Add to the project CLAUDE.md under '## House rules': @~/.claude/modus/rules/rfc-convention.md",
+        "Add the same import line to the <project>.rfcs repo's CLAUDE.md, so both sides follow one rule.",
+        "If the repo still imports @~/.claude/modus/rules/pending-work-in-roadmap.md, replace that line — the rule was renamed, and the old path resolves to nothing.",
+        "Create the specs repo if it does not exist yet: see the rfcs-repo catalog entry."
       ],
       "recommendWhen": "Any repo keeping kickoff briefs in docs/roadmap/; pairs with session-flow's /roadmap and session-wrap-up's handoff step.",
-      "dependsOn": ["session-wrap-up"],
+      "dependsOn": ["rfcs-repo"],
+      "requiresSecret": false
+    },
+    {
+      "id": "rfcs-repo",
+      "title": "<project>.rfcs specification repository (layout + RFC template)",
+      "category": "convention",
+      "scope": "project",
+      "summary": "The repository that holds a project's plan: rfcs/0000-template.md to start an RFC, rfcs/done/ for retired ones, rfcs/releases.md for the release registry, and standing reference docs at the root. Cloned as a sibling of the code repo (Projects/tekio + Projects/tekio.rfcs) or inside the same workspace folder, which is also where the roadmap board looks for it.",
+      "assets": ["configs/rfcs/0000-template.md", "configs/rfcs/README.md"],
+      "install": [
+        "gh repo create <owner>/<project>.rfcs --private, then clone it beside the code repo (or into the workspace folder).",
+        "mkdir -p rfcs/done and copy configs/rfcs/0000-template.md into rfcs/.",
+        "Write README.md (naming the code repo it plans) and CLAUDE.md (importing the rfc-convention rule) from the skeletons in configs/rfcs/README.md.",
+        "Migrating an existing docs/roadmap/? Move it with git filter-repo so the history comes too, then convert headers to frontmatter and pad IDs to four digits."
+      ],
+      "recommendWhen": "Project keeps a roadmap, task briefs, or design docs of any kind.",
+      "dependsOn": [],
       "requiresSecret": false
     },
     {
@@ -121,9 +139,7 @@
       "scope": "global",
       "summary": "~/.claude/settings.json preferences: model, effortLevel=xhigh, push notifications on background-agent completion.",
       "assets": ["configs/settings/global-settings.json"],
-      "install": [
-        "Merge the keys from configs/settings/global-settings.json into ~/.claude/settings.json."
-      ],
+      "install": ["Merge the keys from configs/settings/global-settings.json into ~/.claude/settings.json."],
       "recommendWhen": "Set once per machine (global). Skip if already configured to taste.",
       "dependsOn": [],
       "requiresSecret": false

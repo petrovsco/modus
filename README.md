@@ -11,6 +11,7 @@ It sits in a three-layer model:
 |---|---|---|
 | Knowledge about *me* | `<personal-os>` (private) | What should Claude know about my life? |
 | Reusable *tooling* | **this repo** | How should Claude work in my repos? |
+| What a project *intends* | `<project>.rfcs` (one per project) | What are we building next, and why? |
 | Installed *state* | `~/.claude` + each project's `.claude/` | What's active here, right now? |
 
 ## Layout
@@ -33,10 +34,11 @@ modus/
 │   ├── settings/                     ←   permission + global settings fragments
 │   ├── mcp/                          ←   secret-bearing MCP templates (placeholders!)
 │   ├── environment/                  ←   machine-level fixes (git-ssh-windows)
+│   ├── rfcs/                         ←   the RFC template + <project>.rfcs skeleton
 │   └── memory/                       ←   auto-memory convention
-├── docs/roadmap/                     ← this repo's own task briefs (NNN-<slug>.md)
+├── docs/roadmap/                     ← this repo's own briefs, until they move to modus.rfcs
 └── tools/
-    └── roadmap-board/                ← local web board over every project's docs/roadmap/
+    └── roadmap-board/                ← local web board over every project's RFCs
 ```
 
 ## One-time setup (per machine)
@@ -68,6 +70,39 @@ catalog entries, and installs what you pick:
 - **settings / MCP templates / environment / conventions** → merged or applied
   per the catalog's install steps (the only category that still copies).
 
+## Where specifications live
+
+A project's plan is not part of its code, so it does not live in its code
+repository. Each project that plans its work has a second repo named
+`<project>.rfcs` — `tekio.rfcs`, `lumi.rfcs`, `yami.rfcs`, `modus.rfcs` —
+cloned beside the code (or inside the same workspace folder):
+
+```
+<project>.rfcs/
+├── rfcs/
+│   ├── 0000-template.md      ← copy this to start one
+│   ├── 0071-<slug>.md        ← the number is a permanent ID
+│   ├── 0071/                 ← optional diagrams and sidecar files
+│   ├── done/                 ← retired RFCs, numbers intact
+│   └── releases.md           ← the release registry
+└── doctrine.md, design-system.md, …   ← standing reference, at the root
+```
+
+The shape is [openclaw/rfcs](https://github.com/openclaw/rfcs) — `rfcs/`, the
+numbered filenames, the `0000` template, sidecar asset folders, and the
+Summary → Motivation → Goals → Non-Goals → Proposal → Rationale → Unresolved
+questions skeleton. What is ours: YAML frontmatter carrying a six-keyword
+`status` with a `status_note` sentence, a `label`, `depends`, and `release`;
+`done/` for both endings; and an `## Acceptance` checklist that decides when a
+file may retire. OpenClaw's `issue` and `rfc_pr` fields are dropped — there is
+no PR ceremony here.
+
+Why split at all: a code history should answer "what was built". Once planning
+sits next to it, half its commits are status flips, a planning edit on a
+feature branch is invisible until it merges, and two branches can conflict over
+a line that was never code. The rule is `rfc-convention`; the template and repo
+skeleton are in `configs/rfcs/`.
+
 ## The command and the watchers
 
 | Trigger | What it does |
@@ -93,7 +128,7 @@ plugin the imports simply resolve to nothing.
 ## How the pieces reinforce each other
 
 ```
-session-flow: context guard ──at turn end──▶ session-wrap-up rule ──hands off──▶ /roadmap (docs/roadmap/)
+session-flow: context guard ──at turn end──▶ session-wrap-up rule ──hands off──▶ /roadmap (<project>.rfcs)
                                               │
                                               └── each unit: build-before-push ──▶ direct-push (commit+push)
                                                                                           │
@@ -106,11 +141,12 @@ session-flow: context guard ──at turn end──▶ session-wrap-up rule ─�
 ## Tools
 
 `tools/roadmap-board/` — a local JIRA/Trello-style web board over every
-project's `docs/roadmap/` briefs (ticket IDs, labels, states, releases,
-full-brief view). Run `python3 tools/roadmap-board/server.py` →
-http://127.0.0.1:4830. It reads the files; the one thing it writes is a
-brief's `**Status:**` line, when you drag its card to another column. See its
-README; repo-URL sources are roadmap task 1.
+project's briefs (ticket IDs, labels, states, releases, full-brief view). Run
+`python3 tools/roadmap-board/server.py` → http://127.0.0.1:4830. It reads the
+files; the one thing it writes is a brief's `**Status:**` line, when you drag
+its card to another column. It still reads the old `docs/roadmap/` layout —
+teaching it to read `<project>.rfcs` repos is roadmap task 7, and repo-URL
+sources are task 1.
 
 ## Secrets
 
@@ -126,7 +162,10 @@ Run `/modus:init` — it detects legacy copies (`.claude/hooks/context-guard.mjs
 `settings.local.json`) and offers to replace them with plugin enablement and
 import lines. Old id → new home: `context-guard-hook` / `memory-after-commit-hook`
 / `roadmap-command` → **session-flow plugin**; `mcp-playwright` +
-`visual-iteration` rule → **visual-iteration plugin**; rules keep their names.
+`visual-iteration` rule → **visual-iteration plugin**; other rules keep their
+names. The one exception is `pending-work-in-roadmap`, which became
+**`rfc-convention`** when planning moved out of the code repo — a CLAUDE.md
+still importing the old path imports nothing, so replace that line.
 
 ## Changing things
 

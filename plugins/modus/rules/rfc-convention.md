@@ -1,180 +1,197 @@
-## Pending work lives in the roadmap
+## Specifications live in the project's RFC repository
 
-One place holds what is left to do: `docs/roadmap/` (adjust the path per repo).
-One file per item, named `NNN-<slug>.md`, starting `# Roadmap: <title>` with a
-`**Label:**` line and a `**Status:**` line. Finished briefs move to `docs/roadmap/done/`.
+Every project that plans its work keeps that planning in a **separate git
+repository named `<project>.rfcs`** — `tekio.rfcs`, `lumi.rfcs`, `yami.rfcs`,
+`modus.rfcs`. The code repository holds code. Nothing about *what we intend to
+build* is committed next to it.
 
-A `.md` file in that directory *without* a number — a README explaining the
-convention, a shared-context doc the briefs tell you to read first — is
-furniture, not a task. It keeps its plain name and `/roadmap` ignores it.
-
-**The number in the filename is the task ID.** It is allocated once, when the
-brief is created, and never changes — not when the title is rewritten, not when
-the slug is renamed, not when the brief moves into `done/`. Refer to work by that
-number ("task 7"), because it is the only handle that survives the file changing
-underneath it. An ID derived from position in a sorted list is not an ID: it
-silently repoints at a different task the next time a brief is added or renamed,
-and every note, commit message and conversation that used it is now wrong.
-
-To allocate one: take the highest number across `docs/roadmap/` **and**
-`docs/roadmap/done/`, add one, pad to three digits. Never reuse a number and
-never renumber to close a gap — gaps are the record of retired work. A brief that
-is finished or abandoned is *moved into `done/`*, never deleted, so the count
-keeps climbing past everything that has ever been on the roadmap.
-
-**Every active brief carries a label.** A `**Label:**` line sits directly above
-`**Status:**`, holding exactly one of four values:
-
-- **bug** — something already shipped behaves wrongly; the brief restores the
-  intended behavior.
-- **infra** — structure, tooling, process, or platform work (auth, migrations,
-  build tooling, the process docs themselves). Not itself a user-visible change.
-- **feature** — committed product work: something the user will see or use.
-- **backlog** — an idea not yet committed to. Parked until the context or the
-  decision that makes it kickoff-ready arrives; then relabel it in place
-  (usually to feature).
-
-The label names the kind of work; the `**Status:**` line tracks where it
-stands. Give every new brief its label at creation. A brief that predates the
-convention just lacks the line — add one when you next touch it.
-
-**The `**Status:**` line starts with one of six words.** Everything after the
-em dash is for a person; the first word is what tooling reads.
-
-| Keyword | Means |
-|---|---|
-| `backlog` | not committed to yet; it needs a decision or more context |
-| `planned` | committed and kickoff-ready; nobody is working on it |
-| `in progress` | someone is working on it now |
-| `blocked` | committed, but something outside the brief must happen first |
-| `done` | finished — the file lives in `done/` |
-| `discarded` | dropped without shipping — the file lives in `done/` too |
-
-Then an em dash and **one or two sentences** on where it actually stands. Not
-three paragraphs: a status line that has grown into a changelog is unreadable to
-both people and tools, and it is the first sign a brief has stopped being
-maintained. Long-running briefs keep their history in a `## Progress log`
-section of dated bullets right after the header instead.
-
-`done/` is the archive, not a trophy cabinet. A brief we decide **not** to do
-retires the same way a finished one does, but says so:
-`**Status:** discarded — <why, in one line>`. Two endings, two words — `done`
-shipped, `discarded` was dropped — and neither is a deletion, because the
-number is never reused and the reasoning is the part worth keeping. The state
-lives in the status line, never in the label: the label keeps saying what kind
-of work it *was*. Tools read the keyword and mark such a brief discarded rather
-than done, so a dropped brief never reads as a shipped one.
-
-Discarding propagates. Anything that `**Depends:**` on the dropped brief is now
-waiting for something that will never land, so those briefs get a decision in
-the same edit — unblocked, re-pointed at whatever really blocks them, or
-discarded too.
-
-**Close on evidence, not on feeling.** Write each item in a brief's
-`## Acceptance` section as a `- [ ]` checkbox and tick it when it is true. All
-boxes ticked means the brief is `done` and moves to `done/`; an open box means it
-is not done, however long ago it started. A brief with open boxes that we have
-decided not to finish is `discarded`, not `done` — the boxes stay unticked and
-the status line says why. Without this, briefs drift — a brief saying "in
-progress" for six weeks whose work shipped in week one is worse than no brief,
-because it makes the whole list untrustworthy.
-
-**A new brief declares where it sits in the running order.** Ordering is not a
-separate planning artefact; it falls out of one optional header line:
-
-```markdown
-**Depends:** 018, 019
+```
+<project>.rfcs/
+├── README.md               ← what this repo is, and which code repo it plans
+├── CLAUDE.md               ← imports this rule
+├── rfcs/
+│   ├── 0000-template.md    ← copy this to start an RFC
+│   ├── 0071-<slug>.md      ← one RFC per unit of work; the number is its ID
+│   ├── 0071/               ← optional: diagrams and sidecar files for RFC 71
+│   ├── done/               ← retired RFCs, keeping their numbers
+│   └── releases.md         ← the release registry (furniture, never an RFC)
+└── doctrine.md, design-system.md, …   ← standing reference, at the root
 ```
 
-Hard blockers only, by task ID. A dependency parks the brief behind another one,
-so list only what genuinely parks it — a soft overlap ("check this doesn't fork
-the same model") is prose, not a dependency. Omit the line when nothing blocks
-it. Dependencies on a task already in `done/` are ignored, so *this line* never
-has to be edited when its blocker lands — but the `**Status:**` line does, and
-that is on whoever lands the blocker. See below.
+**`rfcs/` is for change; the root is for what stands.** A numbered RFC proposes
+something that is not true yet. A doctrine, a design system, a schema, a
+product description states what *is* — those live at the repository root (or in
+folders under it) and carry no future work. The moment a reference document
+grows a "follow-up", "next step", "TODO" or "proposed edit", that item has
+escaped tracking: move it into an RFC, leave a one-line pointer where it was,
+and repoint anything that referenced the old location.
 
-Answer three questions when you create a brief, and write the answers into the
-header:
+**Two repositories, two commits.** Work that changes both the plan and the code
+is committed in both, in the same session, neither one left dirty. Never mirror
+an RFC into the code repo "for convenience" — a copied spec is a spec that will
+disagree with itself within a week.
 
-1. **What has to land first?** → the `**Depends:**` line.
-2. **Are we committed to this?** → `planned` if yes, `backlog` if it still needs
-   a decision. "Committed" is a real bar: if nobody would start it this month,
-   it is backlog, and putting it in planned only makes the planned column
-   meaningless.
-3. **What does it unblock?** → if the answer is an existing brief, add
-   `**Depends:** <this id>` to *that* brief. A dependency is one edge and it has
-   two ends; recording it on only one leaves the order wrong.
+## The RFC file
 
-**A status is maintained, not just set.** That line is the only place the state
-of the work is written down — it is what `/roadmap` lists and what a board's
-columns are derived from. A status that was true last week and has not been
-touched since is worse than none, because it is read as current.
+Named `NNNN-<slug>.md` — four digits, a hyphen, a slug. It opens with YAML
+frontmatter, then a `# RFC NNNN: <title>` heading, then the sections below.
 
-Four moments change one, and each is part of the work rather than bookkeeping
-for later — the edit belongs in the same commit as the change it describes:
+```markdown
+---
+title: Retire the flat exercises fallback
+authors: [Peter Petrov]
+created: 2026-08-14
+last_updated: 2026-09-10
+status: planned
+status_note: committed for 2.1.0; nothing blocks it
+label: infra
+depends: [46]
+release: 2.1.0
+---
 
-| When | The brief becomes |
+# RFC 0071: Retire the flat exercises fallback
+```
+
+| Field | |
+|---|---|
+| `title` | the same words as the `# RFC NNNN:` heading |
+| `authors` | a list, even with one name |
+| `created` | `YYYY-MM-DD`, set once and never touched again |
+| `last_updated` | `YYYY-MM-DD`, bumped in the *same edit* as any change to the file |
+| `status` | one of six keywords, below |
+| `status_note` | one or two sentences on where it actually stands, for a person |
+| `label` | `bug` · `infra` · `feature` · `backlog` — exactly one |
+| `depends` | RFC numbers that must land first; omit the field when nothing blocks it |
+| `release` | one release name, spelled as `releases.md` spells it; omit when unscheduled |
+
+Deliberately absent: OpenClaw's `issue` and `rfc_pr`. There is no PR ceremony
+here — work is pushed straight to the main branch — so a field pointing at a
+review that never happens is noise.
+
+**The number in the filename is the ID, and it never changes.** Not when the
+title is rewritten, not when the slug is renamed, not when the file moves into
+`done/`. Allocate one by taking the highest number across `rfcs/` **and**
+`rfcs/done/`, adding one, and padding to four digits. Never reuse a number,
+never renumber to close a gap — gaps are the record of retired work. `0000` is
+the template and is never an RFC.
+
+**A `.md` file without a `NNNN-` prefix is not an RFC.** `README.md`,
+`releases.md`, and any shared-context file the RFCs tell you to read first are
+furniture: never listed as work, never given an ID.
+
+## Sections
+
+Seven from the OpenClaw template, plus one of ours:
+
+| Section | |
+|---|---|
+| `## Summary` | one paragraph: what this changes |
+| `## Motivation` | why it is worth doing, and what went wrong without it |
+| `## Goals` | what success looks like |
+| `## Non-Goals` | what this deliberately does not touch — the fence around the work |
+| `## Proposal` | what is actually changing, concretely enough to start from |
+| `## Rationale` | the alternatives considered and why this one won |
+| `## Acceptance` | `- [ ]` checkboxes, each one testable |
+| `## Unresolved questions` | what is still open — an RFC with entries here is not kickoff-ready |
+
+A long-running RFC keeps its history in a `## Progress log` of dated bullets
+after the frontmatter — never by growing `status_note` into a changelog.
+
+**Close on evidence.** All boxes ticked means the RFC is `done` and moves to
+`done/`. An open box means it is not done, however long ago it started. Work
+decided against is `discarded` with the boxes left unticked and the reason in
+`status_note` — the number is never reused and the reasoning is the part worth
+keeping.
+
+## Status
+
+Six keywords. The keyword is what tooling reads; `status_note` is what a person
+reads.
+
+| `status` | Means |
+|---|---|
+| `backlog` | not committed to yet; needs a decision or more context |
+| `planned` | committed and kickoff-ready; nobody is working on it |
+| `in progress` | someone is working on it now |
+| `blocked` | committed, but something outside the RFC must land first |
+| `done` | shipped — the file lives in `done/` |
+| `discarded` | dropped without shipping — the file lives in `done/` too |
+
+`done/` holds both endings, so a file in there is only "done" if it says so.
+A `discarded` RFC is reported as dropped, never as shipped.
+
+**A status is maintained, not just set.** It is the only written record of where
+the work stands, and one that was true last week and untouched since is worse
+than none, because it is read as current. Four moments change it, and each edit
+belongs in the same commit as the change it describes:
+
+| When | `status` becomes |
 |---|---|
 | you start on it | `in progress` |
-| something outside it has to land first | `blocked` — naming what, plus a `**Depends:**` line when that something is another brief |
-| the thing it waited for lands | `planned` again, or `in progress` if you carry straight on |
+| something outside it must land first | `blocked`, naming what — plus `depends` when that something is another RFC |
+| the thing it waited for lands | `planned`, or `in progress` if you carry straight on |
 | it ships, or it is dropped | `done` or `discarded`, and the file moves to `done/` |
 
-**Saying it is not recording it.** The moment you tell the user a task is
+Every one of those edits bumps `last_updated` too.
+
+**`depends` and `status` are two halves of one statement.** An RFC whose
+dependency has not landed reads `blocked`, not `planned`. Writing only one of
+the two is what leaves genuinely blocked work sitting in the Planned column.
+Dependencies on an RFC already in `done/` are ignored, so `depends` itself
+never needs editing when a blocker lands — but the status does, and that is on
+whoever lands the blocker.
+
+**Saying it is not recording it.** The moment you tell the user something is
 blocked — "we can't do 12 before 9 lands", "this needs the migration first" —
-you have discovered a fact about the roadmap, and the next thing you do is write
-it into the brief. A blocker that exists only in a chat message is gone when the
-session ends: the list still shows the task as ready, someone picks it up, and
-walks into the wall you already found.
+you have discovered a fact about the plan, and the next thing you do is write it
+into the RFC. A blocker that exists only in a chat message is gone when the
+session ends. This bites hardest in planning, where blockers are found in bulk:
+working out the order of five RFCs and reporting it in prose leaves five files
+unchanged and the reasoning lost. **The plan is the edits**; the message to the
+user is a summary of them.
 
-Planning is where this fails most, because planning is where blockers are found
-in bulk. Working out the order of five briefs and then reporting that order in
-prose leaves five briefs unchanged and the reasoning lost — **the plan is the
-edits to the briefs**, and the message to the user is a summary of them.
+**Unblocking is the blocker's last step.** Before an RFC moves into `done/`,
+take everything that depends on it off `blocked`. Nobody else will.
+**Discarding propagates the same way**: whatever depended on a dropped RFC is
+now waiting for something that will never land, and gets its decision in the
+same edit.
 
-**The depends line and the status line are two halves of one statement.** The
-`**Depends:**` line names what is in the way; the `**Status:**` keyword is what
-tooling groups by. A brief whose dependency has not landed reads `blocked`, not
-`planned` — writing only one of the two is what leaves a genuinely blocked task
-sitting in the Planned column.
+## Labels
 
-**Unblocking is the blocker's last step.** Before a brief moves into `done/`,
-look at what depends on it and take those briefs off `blocked`. Nobody else
-will: the dependent brief is not open in front of anyone, and left alone it
-reads blocked for weeks after the thing it waited for shipped.
+Exactly one per RFC. The label says what kind of work it is; the status says
+where it stands.
 
-**A brief committed to a release says so.** One optional header line —
-`**Release:** 2.0.0` — one release per brief, kept when the brief moves to
-`done/` so a shipped release's scope stays browsable. Releases are declared in
-`docs/roadmap/releases.md` (furniture, never a task): one `##` section per
-release whose heading text is the name exactly as briefs spell it, with
-optional `**Target:**` and `**Status:** planned | released <date>` lines.
-Editing the `**Release:**` line *is* the scheduling act — tag what must ship in
-the release, untag what moves out. Work that can only happen *after* the
-release ships is not in it; it depends on it.
+- **bug** — something already shipped behaves wrongly; the RFC restores the
+  intended behavior.
+- **infra** — structure, tooling, process or platform work, including the
+  process documents themselves. Not itself a user-visible change.
+- **feature** — committed product work: something the user will see or use.
+- **backlog** — an idea not committed to yet. Parked until the decision that
+  makes it kickoff-ready arrives; then relabel in place, usually to feature.
 
-**Reference docs must not carry future work.** A doctrine, an index, an ADR, a
-README states what *is* and why. The moment one grows a "proposed edit",
-"follow-up", "next step", "TODO", or "needs a brief", that item has escaped
-tracking — it is remembered, not scheduled, and nothing lists it. It is also
-where work goes to die: nobody re-reads a reference doc looking for a task.
+## Releases
 
-When you notice one:
+One optional `release:` field commits an RFC to a release, and it **stays when
+the file moves to `done/`** — that is what keeps a shipped release's scope
+browsable afterwards. Editing that field *is* the scheduling act; there is no
+other bookkeeping.
 
-1. **Move the item into a roadmap file** — allocate the next ID, and carry the
-   whole argument, not a summary, so the brief is kickoff-ready on its own and
-   the reader never needs both files.
-2. **Leave a one-line pointer** where it was, naming the brief.
-3. **Repoint anything that referenced the old location.**
+Releases are declared in `rfcs/releases.md` — furniture, never an RFC. One `##`
+section per release, the heading text being the name exactly as RFCs spell it,
+with optional `**Target:**` and `**Status:** planned | released <date>` lines.
+Work that can only happen *after* a release ships is not part of it — it
+depends on it.
 
-**Decisions stay; the work they create moves.** "Habits is shelved, delete by
-2026-10-07" is a decision and belongs in the doctrine that made it. *Deleting the
-component* is a roadmap item. Likewise a README documenting how a one-time setup
-step works is reference; the fact that nobody has run it yet is a roadmap item.
+## Assets
 
-**Applies to writing, not just tidying.** When finishing a piece of work leaves a
-remainder, the remainder becomes a roadmap file in the same change — never a
-parting paragraph in the doc you happened to have open.
+Anything that would clutter the RFC body — a diagram, a screenshot, an
+inventory, a long implementation checklist — goes in a sibling folder named for
+the RFC's number and is referenced with a relative path:
 
-**The test:** if it is not a file in the roadmap directory, `/roadmap` cannot see
-it — so it is not on the roadmap, whatever the document holding it calls itself.
+```markdown
+![](0071/exercise-shapes.png)
+[Migration inventory](0071/inventory.md)
+```
+
+The folder is optional and shares the RFC's fate: it moves into `done/`
+alongside it.
