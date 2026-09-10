@@ -20,7 +20,7 @@ python3 tools/roadmap-board/server.py
 With no arguments it scans the folder two levels above this repo (i.e.
 `~/Projects`) for `*/docs/roadmap` and `*/*/docs/roadmap` — that picks up both
 plain repos (`tekio/docs/roadmap`) and workspace-nested ones
-(`feya-workspace/feyabuild/docs/roadmap`). Alternatives:
+(`lumi-workspace/lumi/docs/roadmap`). Alternatives:
 
 ```bash
 python3 server.py ~/Projects/tekio            # explicit projects only
@@ -64,7 +64,7 @@ See **Dragging a card** below, or pass `--read-only` to switch it off.
   table browsing.
 - **Deep links**: opening a task sets the URL hash — `#tekio:7` opens tekio
   task 7 directly (nested projects URL-encode the key, e.g.
-  `#feya-workspace%2Ffeyabuild:1`). Views are bookmarkable too:
+  `#lumi-workspace%2Flumi:1`). Views are bookmarkable too:
   `?view=releases`, `?group=release`, etc.
 - Furniture (`README.md`, shared-context files — any `.md` without a `NNN-`
   prefix) is ignored, as `/roadmap` does. A brief that predates the label
