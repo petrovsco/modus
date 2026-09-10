@@ -36,10 +36,22 @@ modus/
 │   ├── environment/                  ←   machine-level fixes (git-ssh-windows)
 │   ├── rfcs/                         ←   the RFC template + <project>.rfcs skeleton
 │   └── memory/                       ←   auto-memory convention
-├── docs/roadmap/                     ← this repo's own briefs, until they move to modus.rfcs
 └── tools/
     └── roadmap-board/                ← local web board over every project's RFCs
 ```
+
+## Where the specifications live
+
+**`petrovsco/modus.rfcs`**, not this repo. Every project that plans its work
+keeps that planning in a separate `<project>.rfcs` repository — the code
+repository holds code. The convention is
+`plugins/modus/rules/rfc-convention.md` here, and `configs/rfcs/` holds what
+you copy to create one.
+
+This repo followed its own rule on 2026-09-10: the ten briefs that were in
+`docs/roadmap/` moved to `modus.rfcs` with their history, keeping their numbers
+and gaining a fourth digit. Clone it as a sibling — `Projects/modus.rfcs` —
+which is where the board looks.
 
 ## One-time setup (per machine)
 
@@ -145,9 +157,10 @@ session-flow: context guard ──at turn end──▶ session-wrap-up rule ─�
 project's briefs (ticket IDs, labels, states, releases, full-brief view). Run
 `python3 tools/roadmap-board/server.py` → http://127.0.0.1:4830. It reads the
 files; the one thing it writes is a brief's `**Status:**` line, when you drag
-its card to another column. It still reads the old `docs/roadmap/` layout —
-teaching it to read `<project>.rfcs` repos is roadmap task 7, and repo-URL
-sources are task 1.
+its card to another column. It still reads the old `docs/roadmap/` layout, so
+it cannot yet see this repo's own RFCs now that they live in `modus.rfcs` —
+teaching it to read `<project>.rfcs` repos is RFC 0007, and repo-URL sources
+are RFC 0001.
 
 ## Secrets
 
@@ -180,6 +193,6 @@ still importing the old path imports nothing, so replace that line.
   README in sync and bumps the owning plugin's patch version.
 - **Minor (and major) versions are planned, never automatic.** Day-to-day work
   moves only the patch digit. A plugin reaches `x.(y+1).0` the same way any
-  release does here: declared in `docs/roadmap/releases.md` (named
+  release does here: declared in `modus.rfcs`'s `rfcs/releases.md` (named
   `<plugin> x.y.0`), scoped by `**Release:**` lines on briefs, and bumped only
   when that release ships — on the user's say-so.
