@@ -101,6 +101,24 @@
       "requiresSecret": false
     },
     {
+      "id": "no-personal-context",
+      "title": "No personal context in this repo (house rule)",
+      "category": "rule",
+      "scope": "project",
+      "summary": "A repo holds project information and project code, never information about the people who work on it: no names, ages or relationships (use roles), no real body/health/money/employment data (invent fixtures and mark them invented), no contact or location detail. State the shape a requirement has, not the instance. And it never names a personal knowledge base — no repo name, URL, org or path; tooling that must reach one reads ~/.claude/modus/personal-os and is inert when that file is absent.",
+      "assets": ["plugins/modus/rules/no-personal-context.md"],
+      "install": [
+        "Ensure the core modus plugin is enabled at user scope (it syncs rules to ~/.claude/modus/rules/).",
+        "Add to the project CLAUDE.md under '## House rules': @~/.claude/modus/rules/no-personal-context.md",
+        "State the rule in full alongside the import if the repo is or will be public \u2014 the import resolves to nothing for a reader without modus installed.",
+        "Audit what is already committed before relying on the rule: grep the repo and its git history for personal names, real measurements and any path into a personal knowledge base. The rule stops new leaks; it does not clean old ones.",
+        "If tooling in this repo routes findings outward, point it at ~/.claude/modus/personal-os and make the step silent when that file is missing."
+      ],
+      "recommendWhen": "Every repo. Non-negotiable for any repo that is public, will be public, or has collaborators.",
+      "dependsOn": [],
+      "requiresSecret": false
+    },
+    {
       "id": "rfcs-repo",
       "title": "<project>.rfcs specification repository (layout + RFC template)",
       "category": "convention",

@@ -11,8 +11,8 @@ description: Watcher for reusable agent configs. Use PROACTIVELY in repos
 # modus capture — the intake funnel
 
 Turn observed signals or a stated idea into a properly-registered reusable
-config in the modus repo (`~/Projects/modus`; on this machine
-`~/Projects/modus` — ask if missing).
+config in the modus repo (`~/Projects/modus` by convention — ask where it was
+cloned if it is not there).
 
 ## Gate: is the watcher armed here?
 

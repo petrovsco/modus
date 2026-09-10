@@ -9,7 +9,7 @@ It sits in a three-layer model:
 
 | Layer | Lives in | Question it answers |
 |---|---|---|
-| Knowledge about *me* | `<personal-os>` (private) | What should Claude know about my life? |
+| Knowledge about *me* | a private personal knowledge base — its own repo, never named here | What should Claude know about my life? |
 | Reusable *tooling* | **this repo** | How should Claude work in my repos? |
 | What a project *intends* | `<project>.rfcs` (one per project) | What are we building next, and why? |
 | Installed *state* | `~/.claude` + each project's `.claude/` | What's active here, right now? |
@@ -23,7 +23,7 @@ modus/
 │   ├── modus/                        ← CORE (enable once, user scope):
 │   │   ├── commands/init.md          ←   /modus:init
 │   │   ├── skills/capture/           ←   the capture watcher skill
-│   │   ├── skills/decision-watcher/  ←   life-decision watcher → the personal knowledge base inbox
+│   │   ├── skills/decision-watcher/  ←   life-decision watcher → personal base
 │   │   ├── rules/                    ←   house rules (import-ready bodies)
 │   │   ├── scripts/sync-rules.mjs    ←   SessionStart: rules → ~/.claude/modus/rules/
 │   │   └── hooks/hooks.json
@@ -109,11 +109,12 @@ skeleton are in `configs/rfcs/`.
 |---------|--------------|
 | `/modus:init` (you) | Interactive checklist: wire catalog configs into the current repo. |
 | **capture** skill (the model, or you via `/modus:capture`) | The intake funnel, armed in modus-initialized repos: when it notices a correction, a repeated chore, or permission friction, it proposes a reusable config; hand it an idea directly and it refines, saves, and registers it here. Nothing is written before you approve. |
-| **decision-watcher** skill (the model, or you via `/modus:decision-watcher`) | The OS funnel, armed in every session on machines with `<personal-os>` checked out: when a life- or project-level decision is settled, it drafts a kernel-format entry and — with your yes — stages a proposal in `<personal-os>/inbox/` for `/ingest`. It never appends to the decision log itself; that gate stays in the OS. Inert on machines without the OS. |
+| **decision-watcher** skill (the model, or you via `/modus:decision-watcher`) | The funnel to the personal knowledge base, armed in every session on a machine where `~/.claude/modus/personal-os` names one: when a life- or project-level decision is settled, it appends the moment to that base's journal — ungated, because capture that asks permission never happens. It never touches the decision log; that promotion gate stays inside the base. **Inert, and silent about its own existence, on every machine without that file.** |
 
 ## House rules — how the import trick works
 
-Always-on behavioral rules (direct-push, build-before-push, session-wrap-up)
+Always-on behavioral rules (direct-push, build-before-push, session-wrap-up,
+no-personal-context)
 can't ship inside plugins — CLAUDE.md content isn't a plugin component. Instead:
 
 1. Rule bodies live once, here, in `plugins/modus/rules/`.

@@ -62,8 +62,8 @@ What that costs, concretely:
 
 ## Explicitly not
 
-- Moving anything into `<personal-os>`. That repo holds knowledge about the
-  person; this is project bookkeeping and stays its own thing.
+- Moving anything into the personal knowledge base. That repo holds knowledge
+  about the person; this is project bookkeeping and stays its own thing.
 - A hosted or shared tracker. The specs stay files in git, read by the same
   tools.
 - Changing what a brief *says* during the move. Converting a header is not a

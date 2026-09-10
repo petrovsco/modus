@@ -11,8 +11,8 @@ only for the few catalog categories that plugins cannot carry.
 
 ## 0. Locate the modus repo
 
-The clone lives at `~/Projects/modus` (on this machine:
-`~/Projects/modus`). If missing, ask where it was cloned. Read
+The clone lives at `~/Projects/modus` by convention. If it is not there, ask
+where it was cloned — never guess a path from the machine's layout. Read
 `<modus>/catalog.json` — the source of truth for the checklist. Never guess
 entries; only offer what's in the catalog.
 
