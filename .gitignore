@@ -20,3 +20,7 @@ credentials.json
 Thumbs.db
 __pycache__/
 *.pyc
+
+# Playwright MCP output — testing evidence only, never versioned
+.playwright-mcp/
+playwright-tests/
