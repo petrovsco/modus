@@ -8,7 +8,8 @@ build* is committed next to it.
 ```
 <project>.rfcs/
 ├── README.md               ← what this repo is, and which code repo it plans
-├── CLAUDE.md               ← imports this rule
+├── CLAUDE.md               ← points at the rules folder
+├── .claude/rules/modus/    ← this rule, committed so it travels with the repo
 ├── rfcs/
 │   ├── 0000-template.md    ← copy this to start an RFC
 │   ├── 0071-<slug>.md      ← one RFC per unit of work; the number is its ID

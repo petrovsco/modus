@@ -17,7 +17,8 @@ cloned if it is not there).
 ## Gate: is the watcher armed here?
 
 This skill acts proactively **only in repos initialized with modus** — i.e.
-the project has `@~/.claude/modus/rules/…` import lines in its CLAUDE.md or an
+the project has rule files in `.claude/rules/modus/` (or, not yet migrated,
+`@~/.claude/modus/rules/…` import lines in its CLAUDE.md) or an
 `…@modus` plugin enabled in its `.claude/settings.json*`. In any other repo,
 stay quiet unless the user explicitly asks to capture something. When you do
 propose, propose — never write before the user picks.
@@ -46,7 +47,7 @@ existing entry — if an idea overlaps one, offer to **update that entry**.
 
 Pin down, asking only what you can't infer:
 
-- **Kind** — rule (imported CLAUDE.md snippet) · command · hook · skill · mcp
+- **Kind** — rule (a file under a repo's `.claude/rules/modus/`) · command · hook · skill · mcp
   template · permission/settings · environment · convention. Pick the lightest
   form that works. (Always-follow → rule; load-when-relevant know-how → skill;
   user-triggered → command; must-happen-deterministically → hook.)
@@ -60,9 +61,10 @@ Restate the refined config in 2–4 lines and get a thumbs-up before writing.
 
 Match existing conventions; every kind has a home:
 
-- **rule** → `plugins/modus/rules/<slug>.md` — **import-ready body only**
-  (starts at its `##` heading; meta lives in the catalog entry). Reaches
-  projects via `@~/.claude/modus/rules/<slug>.md` imports.
+- **rule** → `plugins/modus/rules/<slug>.md` — **the body only** (starts at its
+  `##` heading; meta lives in the catalog entry). Reaches a project as a
+  committed copy at its `.claude/rules/modus/<slug>.md`, which the SessionStart
+  hook refreshes.
 - **command** → `commands/<name>.md` inside the most cohesive plugin.
 - **hook** → script under the fitting plugin + an entry in that plugin's
   `hooks/hooks.json`, referencing scripts as `${CLAUDE_PLUGIN_ROOT}/…`.

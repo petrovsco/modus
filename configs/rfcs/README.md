@@ -25,8 +25,9 @@ any code checked out at all.
 ```bash
 gh repo create <owner>/<project>.rfcs --private
 git clone git@github.com:<owner>/<project>.rfcs.git
-mkdir -p <project>.rfcs/rfcs/done
+mkdir -p <project>.rfcs/rfcs/done <project>.rfcs/.claude/rules/modus
 cp configs/rfcs/0000-template.md <project>.rfcs/rfcs/
+cp plugins/modus/rules/rfc-convention.md <project>.rfcs/.claude/rules/modus/
 ```
 
 Then write the two files below, commit, push.
@@ -55,19 +56,28 @@ what we intend to build lives here.
 
 ## `CLAUDE.md`
 
-One import line, so a session in the specs repo follows the same rule as a
-session in the code repo:
+One sentence, because the rule itself is a committed file that Claude Code
+loads on its own:
 
 ```markdown
 # CLAUDE.md
 
 ## House rules
 
-@~/.claude/modus/rules/rfc-convention.md
+The rules in `.claude/rules/modus/` apply to this repo; Claude Code loads them
+automatically. They are copies — edit them in the modus repo.
 ```
 
-The code repo imports the same rule — that is what tells a session working on
-the code where its RFCs are.
+The copy that makes this repo follow the convention is
+`.claude/rules/modus/rfc-convention.md`, put there by the `cp` above. The code
+repo carries the same file — that is what tells a session working on the code
+where its RFCs are. Copies are committed, so a cloud session and a reader
+without modus installed both see the rules; the plugin's SessionStart hook
+refreshes them when the rule changes upstream, and adds nothing you did not
+copy in yourself.
+
+The first line of every copy is
+`<!-- managed by modus — edit the rule in the modus repo, not here -->`.
 
 ## Adopting it in a repo that already has `docs/roadmap/`
 

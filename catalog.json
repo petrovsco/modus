@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "description": "Source of truth for /modus:init. Each entry is an opt-in config. category: plugin = enable via enabledPlugins; rule = one @import line in the project CLAUDE.md (synced by the core modus plugin); settings/mcp/environment/convention = merged or applied per the install steps. `scope` = where it lands (project | global | machine). `recommendWhen` lets /modus:init pre-check relevant items after sniffing the project.",
+  "description": "Source of truth for /modus:init. Each entry is an opt-in config. category: plugin = enable via enabledPlugins; rule = a committed copy at <project>/.claude/rules/modus/<slug>.md, which Claude Code loads wherever the repo is checked out and the core modus plugin refreshes at session start (the file's existence is the opt-in; no import line); settings/mcp/environment/convention = merged or applied per the install steps. `scope` = where it lands (project | global | machine). `recommendWhen` lets /modus:init pre-check relevant items after sniffing the project.",
   "entries": [
     {
       "id": "session-flow",
@@ -43,9 +43,10 @@
       "summary": "Work in atomic build-passing units, checkpoint each, and hand off remaining scope to a docs/roadmap/ brief when the context window fills.",
       "assets": ["plugins/modus/rules/session-wrap-up.md"],
       "install": [
-        "Ensure the core modus plugin is enabled at user scope (it syncs rules to ~/.claude/modus/rules/).",
-        "Add to the project CLAUDE.md under '## House rules': @~/.claude/modus/rules/session-wrap-up.md",
-        "If the rule body is pasted in CLAUDE.md from the pre-plugin era, replace the pasted section with the import line."
+        "Copy plugins/modus/rules/session-wrap-up.md to <project>/.claude/rules/modus/session-wrap-up.md, keeping '<!-- managed by modus — edit the rule in the modus repo, not here -->' as its first line.",
+        "Do not add an import line: .claude/rules/ loads automatically. Uninstalling the rule means deleting that file.",
+        "Ensure the core modus plugin is enabled at user scope — its SessionStart hook refreshes the copy whenever the rule changes upstream.",
+        "Delete any older form of the same rule from CLAUDE.md — an @~/.claude/modus/rules/session-wrap-up.md import line, or a pasted body — or the rule loads twice."
       ],
       "recommendWhen": "Paired with the session-flow plugin; any repo with long build sessions.",
       "dependsOn": ["session-flow"],
@@ -59,8 +60,10 @@
       "summary": "Run the full build the deploy runs before committing/pushing.",
       "assets": ["plugins/modus/rules/build-before-push.md"],
       "install": [
-        "Ensure the core modus plugin is enabled at user scope.",
-        "Add to the project CLAUDE.md under '## House rules': @~/.claude/modus/rules/build-before-push.md"
+        "Copy plugins/modus/rules/build-before-push.md to <project>/.claude/rules/modus/build-before-push.md, keeping '<!-- managed by modus — edit the rule in the modus repo, not here -->' as its first line.",
+        "Do not add an import line: .claude/rules/ loads automatically. Uninstalling the rule means deleting that file.",
+        "Ensure the core modus plugin is enabled at user scope — its SessionStart hook refreshes the copy whenever the rule changes upstream.",
+        "Delete any older form of the same rule from CLAUDE.md — an @~/.claude/modus/rules/build-before-push.md import line, or a pasted body — or the rule loads twice."
       ],
       "recommendWhen": "Any project with a build/compile step that CI or the host runs.",
       "dependsOn": [],
@@ -75,8 +78,11 @@
       "assets": ["plugins/modus/rules/direct-push.md"],
       "install": [
         "ONLY for solo/trunk-based repos — confirm with the user first.",
-        "Ensure the core modus plugin is enabled at user scope.",
-        "Add to the project CLAUDE.md under '## House rules': @~/.claude/modus/rules/direct-push.md"
+        "Copy plugins/modus/rules/direct-push.md to <project>/.claude/rules/modus/direct-push.md, keeping '<!-- managed by modus — edit the rule in the modus repo, not here -->' as its first line.",
+        "Do not add an import line: .claude/rules/ loads automatically. Uninstalling the rule means deleting that file.",
+        "Ensure the core modus plugin is enabled at user scope — its SessionStart hook refreshes the copy whenever the rule changes upstream.",
+        "Delete any older form of the same rule from CLAUDE.md — an @~/.claude/modus/rules/direct-push.md import line, or a pasted body — or the rule loads twice.",
+        "The copy is committed, so it is visible to everyone who clones the repo — one more reason to confirm the repo really is solo."
       ],
       "recommendWhen": "Solo repos without PR review or protected branches. Confirm first.",
       "dependsOn": ["build-before-push"],
@@ -90,10 +96,11 @@
       "summary": "Planning leaves the code repo. Every project that plans its work keeps it in a separate <project>.rfcs repository: numbered RFCs in rfcs/ (NNNN-<slug>.md with YAML frontmatter — title, authors, created, last_updated, status, status_note, label, depends, release), retired ones in rfcs/done/ keeping their number, the release registry in rfcs/releases.md, and standing reference (doctrine, design system, schema) at the repo root. Shape borrowed from openclaw/rfcs; the six-keyword status model, labels, depends and releases are ours. Replaces the pending-work-in-roadmap rule.",
       "assets": ["plugins/modus/rules/rfc-convention.md"],
       "install": [
-        "Ensure the core modus plugin is enabled at user scope (it syncs rules to ~/.claude/modus/rules/).",
-        "Add to the project CLAUDE.md under '## House rules': @~/.claude/modus/rules/rfc-convention.md",
-        "Add the same import line to the <project>.rfcs repo's CLAUDE.md, so both sides follow one rule.",
-        "If the repo still imports @~/.claude/modus/rules/pending-work-in-roadmap.md, replace that line — the rule was renamed, and the old path resolves to nothing.",
+        "Copy plugins/modus/rules/rfc-convention.md to <project>/.claude/rules/modus/rfc-convention.md, keeping '<!-- managed by modus — edit the rule in the modus repo, not here -->' as its first line.",
+        "Do not add an import line: .claude/rules/ loads automatically. Uninstalling the rule means deleting that file.",
+        "Ensure the core modus plugin is enabled at user scope — its SessionStart hook refreshes the copy whenever the rule changes upstream.",
+        "Put the same file in the <project>.rfcs repo at .claude/rules/modus/rfc-convention.md, so both sides follow one rule.",
+        "Delete any older form of the same rule from either CLAUDE.md — an @~/.claude/modus/rules/rfc-convention.md import line, an @~/.claude/modus/rules/pending-work-in-roadmap.md line from before the rename, or a pasted body.",
         "Create the specs repo if it does not exist yet: see the rfcs-repo catalog entry."
       ],
       "recommendWhen": "Any repo keeping kickoff briefs in docs/roadmap/; pairs with session-flow's /roadmap and session-wrap-up's handoff step.",
@@ -108,9 +115,10 @@
       "summary": "A repo holds project information and project code, never information about the people who work on it: no names, ages or relationships (use roles), no real body/health/money/employment data (invent fixtures and mark them invented), no contact or location detail. State the shape a requirement has, not the instance. And it never names a personal knowledge base — no repo name, URL, org or path; tooling that must reach one reads ~/.claude/modus/personal-os and is inert when that file is absent.",
       "assets": ["plugins/modus/rules/no-personal-context.md"],
       "install": [
-        "Ensure the core modus plugin is enabled at user scope (it syncs rules to ~/.claude/modus/rules/).",
-        "Add to the project CLAUDE.md under '## House rules': @~/.claude/modus/rules/no-personal-context.md",
-        "State the rule in full alongside the import if the repo is or will be public \u2014 the import resolves to nothing for a reader without modus installed.",
+        "Copy plugins/modus/rules/no-personal-context.md to <project>/.claude/rules/modus/no-personal-context.md, keeping '<!-- managed by modus \u2014 edit the rule in the modus repo, not here -->' as its first line.",
+        "Do not add an import line: .claude/rules/ loads automatically. Uninstalling the rule means deleting that file.",
+        "Ensure the core modus plugin is enabled at user scope \u2014 its SessionStart hook refreshes the copy whenever the rule changes upstream.",
+        "Delete any older form of the same rule from CLAUDE.md \u2014 an @~/.claude/modus/rules/no-personal-context.md import line, or a pasted body \u2014 or the rule loads twice.",
         "Audit what is already committed before relying on the rule: grep the repo and its git history for personal names, real measurements and any path into a personal knowledge base. The rule stops new leaks; it does not clean old ones.",
         "If tooling in this repo routes findings outward, point it at ~/.claude/modus/personal-os and make the step silent when that file is missing."
       ],
@@ -128,7 +136,7 @@
       "install": [
         "gh repo create <owner>/<project>.rfcs --private, then clone it beside the code repo (or into the workspace folder).",
         "mkdir -p rfcs/done and copy configs/rfcs/0000-template.md into rfcs/.",
-        "Write README.md (naming the code repo it plans) and CLAUDE.md (importing the rfc-convention rule) from the skeletons in configs/rfcs/README.md.",
+        "Write README.md (naming the code repo it plans) and CLAUDE.md from the skeletons in configs/rfcs/README.md, and copy the rfc-convention rule into .claude/rules/modus/ so a session in the specs repo follows it too.",
         "Migrating an existing docs/roadmap/? Move it with git filter-repo so the history comes too, then convert headers to frontmatter and pad IDs to four digits."
       ],
       "recommendWhen": "Project keeps a roadmap, task briefs, or design docs of any kind.",

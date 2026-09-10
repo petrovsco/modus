@@ -24,8 +24,8 @@ modus/
 │   │   ├── commands/init.md          ←   /modus:init
 │   │   ├── skills/capture/           ←   the capture watcher skill
 │   │   ├── skills/decision-watcher/  ←   life-decision watcher → personal base
-│   │   ├── rules/                    ←   house rules (import-ready bodies)
-│   │   ├── scripts/sync-rules.mjs    ←   SessionStart: rules → ~/.claude/modus/rules/
+│   │   ├── rules/                    ←   house rules (the one true body of each)
+│   │   ├── scripts/sync-rules.mjs    ←   SessionStart: refresh each repo's copies
 │   │   └── hooks/hooks.json
 │   ├── session-flow/                 ← per-project: context guard, memory nudge, /roadmap
 │   └── visual-iteration/             ← per-project: Playwright MCP + workflow skill
@@ -67,8 +67,8 @@ Then in any Claude Code session:
 ```
 
 Restart. From then on `/modus:init` works in every project, the capture and
-decision watchers are armed, and house rules sync to `~/.claude/modus/rules/`
-at each session start.
+decision watchers are armed, and each repo's house-rule copies are refreshed at
+session start.
 
 ## Per-repo setup
 
@@ -77,8 +77,9 @@ catalog entries, and installs what you pick:
 
 - **plugins** (`session-flow`, `visual-iteration`) → enabled via
   `enabledPlugins` in the repo's `.claude/settings.local.json` — nothing copied.
-- **house rules** → one `@~/.claude/modus/rules/<rule>.md` import line each in
-  the repo's `CLAUDE.md`. Edit a rule here → every repo follows next session.
+- **house rules** → one committed file each in the repo's
+  `.claude/rules/modus/`. Edit a rule here → every repo's copy is refreshed at
+  its next session start.
 - **settings / MCP templates / environment / conventions** → merged or applied
   per the catalog's install steps (the only category that still copies).
 
@@ -123,20 +124,35 @@ skeleton are in `configs/rfcs/`.
 | **capture** skill (the model, or you via `/modus:capture`) | The intake funnel, armed in modus-initialized repos: when it notices a correction, a repeated chore, or permission friction, it proposes a reusable config; hand it an idea directly and it refines, saves, and registers it here. Nothing is written before you approve. |
 | **decision-watcher** skill (the model, or you via `/modus:decision-watcher`) | The funnel to the personal knowledge base, armed in every session on a machine where `~/.claude/modus/personal-os` names one: when a life- or project-level decision is settled, it appends the moment to that base's journal — ungated, because capture that asks permission never happens. It never touches the decision log; that promotion gate stays inside the base. **Inert, and silent about its own existence, on every machine without that file.** |
 
-## House rules — how the import trick works
+## House rules — how they reach a repo
 
 Always-on behavioral rules (direct-push, build-before-push, session-wrap-up,
-no-personal-context)
-can't ship inside plugins — CLAUDE.md content isn't a plugin component. Instead:
+no-personal-context, rfc-convention) can't ship inside plugins — rule text isn't
+a plugin component. Instead:
 
 1. Rule bodies live once, here, in `plugins/modus/rules/`.
-2. The core plugin's SessionStart hook syncs them to `~/.claude/modus/rules/` —
-   a **stable, machine-independent path** (plugin-managed; never hand-edit).
-3. A repo opts in with one visible line per rule in its `CLAUDE.md`:
-   `@~/.claude/modus/rules/direct-push.md`.
+2. A repo opts in by **carrying a copy**: `.claude/rules/modus/<rule>.md`,
+   committed. Claude Code loads `.claude/rules/` automatically, so the rule is
+   there wherever the repo is — a cloud session, a collaborator's machine, a
+   machine with no plugin installed. Having the file *is* the opt-in; deleting
+   it is the opt-out.
+3. The core plugin's SessionStart hook refreshes those copies from the bodies
+   above. It **only refreshes what is already there** — it never adds a rule to
+   a repo, that is `/modus:init`'s job. A rule retired here is not deleted from
+   a repo behind your back: its copy's body is replaced by a two-line note and
+   you remove the file.
 
-Native CLAUDE.md loading, zero copy-paste, no drift. On a machine without the
-plugin the imports simply resolve to nothing.
+Every copy opens with
+`<!-- managed by modus — edit the rule in the modus repo, not here -->`, because
+editing the copy is the one thing that does not work: the next session start
+overwrites it.
+
+The old mechanism was one `@~/.claude/modus/rules/<rule>.md` import line per
+rule in a repo's `CLAUDE.md`. It assumed the plugin was installed on the machine
+reading the repo — false in a cloud sandbox and for anyone who just clones a
+public repo, and both got no rules at all. The hook still publishes to
+`~/.claude/modus/rules/` for one release so repos not yet migrated keep working;
+then that half goes away.
 
 ## How the pieces reinforce each other
 
@@ -171,15 +187,17 @@ committed by design and must stay secret-free.
 
 ## Migrating a repo from the agent-nest era
 
-Run `/modus:init` — it detects legacy copies (`.claude/hooks/context-guard.mjs`,
-`.claude/commands/roadmap.md`, pasted rule bodies, hook entries in
-`settings.local.json`) and offers to replace them with plugin enablement and
-import lines. Old id → new home: `context-guard-hook` / `memory-after-commit-hook`
+Run `/modus:init` — it detects legacy forms (`.claude/hooks/context-guard.mjs`,
+`.claude/commands/roadmap.md`, `@~/.claude/modus/rules/…` import lines, pasted
+rule bodies, hook entries in `settings.local.json`) and offers to replace them
+with plugin enablement and rule files under `.claude/rules/modus/`. Old id → new
+home: `context-guard-hook` / `memory-after-commit-hook`
 / `roadmap-command` → **session-flow plugin**; `mcp-playwright` +
 `visual-iteration` rule → **visual-iteration plugin**; other rules keep their
 names. The one exception is `pending-work-in-roadmap`, which became
 **`rfc-convention`** when planning moved out of the code repo — a CLAUDE.md
-still importing the old path imports nothing, so replace that line.
+still importing the old path imports nothing, so drop that line and copy the
+rule in.
 
 ## Changing things
 

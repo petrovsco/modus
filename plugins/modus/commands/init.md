@@ -24,10 +24,11 @@ Read-only reconnaissance before recommending anything:
 - Stack markers: `package.json`, `.mcp.json`, `supabase/`, framework hints,
   existing `.claude/` dir, existing `CLAUDE.md`.
 - Already installed: `enabledPlugins` in `.claude/settings.json` /
-  `.claude/settings.local.json`, existing `@~/.claude/modus/rules/…` import
-  lines in `CLAUDE.md`, existing hooks/commands/permissions/MCP servers —
-  including **legacy copies** from the pre-plugin era (a copied
-  `context-guard.mjs`, `roadmap.md`, or pasted rule bodies): flag those for
+  `.claude/settings.local.json`, the rule files already in
+  `.claude/rules/modus/`, existing hooks/commands/permissions/MCP servers —
+  including **legacy forms** of a rule (an `@~/.claude/modus/rules/…` import
+  line in `CLAUDE.md`, a pasted rule body) and **legacy copies** from the
+  pre-plugin era (a copied `context-guard.mjs`, `roadmap.md`): flag those for
   migration, not double-install.
 
 ## 2. Present the checklist
@@ -49,12 +50,17 @@ entries. Respect `dependsOn`: offer missing dependencies alongside.
   user wants the choice committed for everyone). Deep-merge; never clobber.
   If the `modus` marketplace isn't registered yet, have the user run
   `/plugin marketplace add ~/Projects/modus` first.
-- **rule** → make sure the core `modus` plugin is enabled at user scope (it
-  syncs the rule files); then append one import line to the project's
-  `CLAUDE.md` under a `## House rules` section (create file/section if absent):
-  `@~/.claude/modus/rules/<slug>.md`. **Never paste the rule body** — the
-  import IS the mechanism. If the body is already pasted from the old era,
-  offer to replace it with the import line.
+- **rule** → copy `<modus>/plugins/modus/rules/<slug>.md` to
+  `<project>/.claude/rules/modus/<slug>.md`, prefixed with the line
+  `<!-- managed by modus — edit the rule in the modus repo, not here -->` and a
+  blank line. Claude Code loads `.claude/rules/` on its own, so **the file's
+  existence is the opt-in** — no import line, and removing the rule means
+  deleting the file. Make sure the core `modus` plugin is enabled at user scope:
+  its SessionStart hook refreshes copies that are already there (it never
+  creates one). Migrate any older form of the same rule in the same edit — an
+  `@~/.claude/modus/rules/<slug>.md` import line or a pasted body in
+  `CLAUDE.md` — or the rule loads twice. Leave `## House rules` as one sentence
+  pointing at the folder.
 - **settings** → deep-merge the fragment's keys into the right settings file
   (project `settings.local.json`, or `~/.claude/settings.json` for global).
 - **mcp** → add the server block to `<project>/.mcp.json`. If
