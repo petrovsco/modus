@@ -236,12 +236,17 @@ rule in.
 ## Changing things
 
 - Edit a rule (or anything in a plugin) → **bump that plugin's patch version**
-  (`1.3.0 → 1.3.1`) in its `plugin.json`, commit, push. Installs are copied into
-  a versioned cache (`~/.claude/plugins/cache/…`) — without the bump, machines
-  keep the old copy however often they auto-update. With the bump, the push is
-  the whole delivery: auto-update picks it up at the next session start, and
-  `claude plugin update <plugin>@modus` forces it sooner. Rules then reach repos
-  at the following session start via the sync.
+  (`1.3.0 → 1.3.1`) in its `plugin.json`, commit, push, **then
+  `claude plugin update <plugin>@modus` on each machine.** Installs are copied
+  into a versioned cache (`~/.claude/plugins/cache/…`), so without the bump a
+  machine keeps the old copy however often it refreshes. **The push is not the
+  whole delivery.** Measured 2026-09-11 with `autoUpdate` on: two fresh
+  non-interactive sessions refreshed nothing, and a marketplace refresh moved
+  the *catalog* forward while leaving the installed plugin where it was —
+  refreshing a catalog and updating a plugin are two operations. Whether an
+  interactive session start does it unattended is still under test (RFC 0013);
+  until that says otherwise, run the update. Rules then reach repos at the
+  following session start via the sync.
 - Add anything new → the **capture** skill keeps `catalog.json` and this
   README in sync and bumps the owning plugin's patch version.
 - **Minor (and major) versions are planned, never automatic.** Day-to-day work

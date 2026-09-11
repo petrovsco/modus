@@ -1,7 +1,7 @@
 {
   "name": "modus",
   "description": "Core modus plugin: /modus:init (set up a repo from the catalog), the capture watcher skill (proposes reusable configs when it spots corrections, repeated chores, or permission friction in modus-initialized repos), the decision-watcher skill (records life/project moments straight into the journal of the user's personal knowledge base, ungated, on machines where one is configured), and the SessionStart sync that refreshes each repo's committed house-rule copies in .claude/rules/modus/ (and, for one more release, still publishes to ~/.claude/modus/rules/ for repos on the old import lines).",
-  "version": "1.4.2",
+  "version": "1.4.3",
   "author": {
     "name": "Peter Petrov"
   }
