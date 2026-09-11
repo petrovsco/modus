@@ -1,0 +1,13 @@
+{
+  "extraKnownMarketplaces": {
+    "modus": {
+      "source": {
+        "source": "github",
+        "repo": "petrovsco/modus"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "modus@modus": true
+  }
+}
