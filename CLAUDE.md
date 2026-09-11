@@ -4,12 +4,10 @@ Guidance for Claude Code working in this repo.
 
 ## House rules
 
-@~/.claude/modus/rules/rfc-convention.md
-@~/.claude/modus/rules/no-personal-context.md
-
-*(These are this repo's own product, synced to `~/.claude/modus/rules/` at
-session start. Editing a rule here changes it for every repo that imports it,
-next session.)*
+The rules in [`.claude/rules/modus/`](.claude/rules/modus/) are copies of this
+repo's own product, refreshed at session start by the `sync-rules` hook. Editing a
+rule in `plugins/modus/rules/` changes it for every repo carrying a copy, at that
+repo's next session.
 
 ## What this repo is
 
