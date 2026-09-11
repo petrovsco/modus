@@ -242,7 +242,10 @@ rule in.
   moves only the patch digit. A plugin reaches `x.(y+1).0` the same way any
   release does here: declared in `modus.rfcs`'s `rfcs/releases.md` (named
   `<plugin> x.y.0`), scoped by `**Release:**` lines on briefs, and bumped only
-  when that release ships — on the user's say-so.
+  when that release ships — on the user's say-so. **Tag it:**
+  `claude plugin tag plugins/<plugin>` then push the tag. The recovery below
+  pins a repo to a release tag, so a release that leaves none has nothing to
+  pin to — which was true of every release before `modus--v1.4.0`.
 
 ## When an auto-update misbehaves
 
