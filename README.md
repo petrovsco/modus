@@ -55,28 +55,41 @@ which is where the board looks.
 
 ## One-time setup (per machine)
 
-```
-git clone git@github.com:shamatoff/modus.git ~/Projects/modus
-```
-
-Then in any Claude Code session:
+The marketplace is the **GitHub repository**, so a new machine needs no clone
+and one command:
 
 ```
-/plugin marketplace add ~/Projects/modus
+/plugin marketplace add petrovsco/modus
 /plugin        → enable "modus" (user scope)
+               → Marketplaces → modus → Enable auto-update
 ```
 
 Restart. From then on `/modus:init` works in every project, the capture and
 decision watchers are armed, and each repo's house-rule copies are refreshed at
-session start.
+session start. **Auto-update is the point of the GitHub source**: it is off by
+default for a third-party marketplace, and with it on, a change reaches this
+machine by being pushed — Claude Code refreshes the marketplace shortly after a
+session starts and the new version loads at the next launch (or on
+`/reload-plugins`).
+
+A clone is only needed to *change* modus — the capture skill edits the catalog
+and the rules there, and the board reads the sibling `.rfcs` repos:
+
+```
+git clone git@github.com:petrovsco/modus.git ~/Projects/modus
+```
 
 ## Per-repo setup
 
 Run **`/modus:init`** in the target repo. It sniffs the stack, recommends
 catalog entries, and installs what you pick:
 
-- **plugins** (`session-flow`, `visual-iteration`) → enabled via
-  `enabledPlugins` in the repo's `.claude/settings.local.json` — nothing copied.
+- **plugins** (`session-flow`, `visual-iteration`) → declared in the repo's
+  **committed** `.claude/settings.json`: the `modus` marketplace under
+  `extraKnownMarketplaces`, the plugins under `enabledPlugins` — nothing copied.
+  Committed, not `settings.local.json`, because `*.local.json` is gitignored:
+  the declaration has to travel with the repo for a cloud session (or a second
+  machine) to install the plugins at session start.
 - **house rules** → one committed file each in the repo's
   `.claude/rules/modus/`. Edit a rule here → every repo's copy is refreshed at
   its next session start.
@@ -202,11 +215,12 @@ rule in.
 ## Changing things
 
 - Edit a rule (or anything in a plugin) → **bump that plugin's patch version**
-  (`1.3.0 → 1.3.1`) in its `plugin.json`, commit, then
-  `claude plugin update <plugin>@modus` (per machine). Installs are copied into
-  a versioned cache (`~/.claude/plugins/cache/…`) — without the bump + update,
-  machines keep the old copy. Rules then reach repos at the next session start
-  via the sync.
+  (`1.3.0 → 1.3.1`) in its `plugin.json`, commit, push. Installs are copied into
+  a versioned cache (`~/.claude/plugins/cache/…`) — without the bump, machines
+  keep the old copy however often they auto-update. With the bump, the push is
+  the whole delivery: auto-update picks it up at the next session start, and
+  `claude plugin update <plugin>@modus` forces it sooner. Rules then reach repos
+  at the following session start via the sync.
 - Add anything new → the **capture** skill keeps `catalog.json` and this
   README in sync and bumps the owning plugin's patch version.
 - **Minor (and major) versions are planned, never automatic.** Day-to-day work
@@ -214,3 +228,11 @@ rule in.
   release does here: declared in `modus.rfcs`'s `rfcs/releases.md` (named
   `<plugin> x.y.0`), scoped by `**Release:**` lines on briefs, and bumped only
   when that release ships — on the user's say-so.
+
+## When an auto-update misbehaves
+
+Per-repo version pinning does not exist: `enabledPlugins` takes only
+`true`/`false`, a marketplace source takes a branch or tag `ref`, never a sha.
+So the recovery is **revert the push, restart the session** — the next
+auto-update pulls the revert. To hold one repo back, pin its own
+`extraKnownMarketplaces.modus.source` to a `ref` tag from `claude plugin tag`.

@@ -9,12 +9,19 @@ picking configs from the catalog and wiring the chosen ones into *this* repo.
 In the plugin-first model you mostly **enable and reference** — you copy files
 only for the few catalog categories that plugins cannot carry.
 
-## 0. Locate the modus repo
+## 0. Read the catalog
 
-The clone lives at `~/Projects/modus` by convention. If it is not there, ask
-where it was cloned — never guess a path from the machine's layout. Read
-`<modus>/catalog.json` — the source of truth for the checklist. Never guess
-entries; only offer what's in the catalog.
+`catalog.json` is the source of truth for the checklist. Never guess entries;
+only offer what's in the catalog. Find it in this order, stopping at the first
+hit — **a clone is not required**:
+
+1. `${CLAUDE_PLUGIN_ROOT}/../../catalog.json`, if that file exists. It does when
+   the plugin is loaded from a modus checkout; a marketplace install copies only
+   the plugin directory into the cache, so there it won't.
+2. The repository of record:
+   `curl -fsSL https://raw.githubusercontent.com/petrovsco/modus/main/catalog.json`
+3. Only if both fail (offline, no checkout): ask where modus was cloned — never
+   guess a path from the machine's layout.
 
 ## 1. Sniff the current project
 
@@ -45,11 +52,25 @@ entries. Respect `dependsOn`: offer missing dependencies alongside.
 
 ## 3. Install each selected entry
 
-- **plugin** → merge `{"enabledPlugins": {"<id>@modus": true}}` into
-  `.claude/settings.local.json` (use `.claude/settings.json` instead only if the
-  user wants the choice committed for everyone). Deep-merge; never clobber.
-  If the `modus` marketplace isn't registered yet, have the user run
-  `/plugin marketplace add ~/Projects/modus` first.
+- **plugin** → deep-merge into the repo's **committed** `.claude/settings.json`
+  — the marketplace declaration and the enablement together, never clobbering
+  what is already there:
+
+  ```json
+  {
+    "extraKnownMarketplaces": {
+      "modus": { "source": { "source": "github", "repo": "petrovsco/modus" } }
+    },
+    "enabledPlugins": { "<id>@modus": true }
+  }
+  ```
+
+  Committed is the default because `*.local.json` is gitignored in most repos
+  that use it: a choice written there reaches no collaborator and no cloud
+  session, which is the whole point of declaring it. The marketplace is added
+  only once the folder is trusted, and the plugin loads at the next session
+  start. Use `.claude/settings.local.json` instead only when the user wants the
+  choice to stay on this machine.
 - **rule** → copy `<modus>/plugins/modus/rules/<slug>.md` to
   `<project>/.claude/rules/modus/<slug>.md`, prefixed with the line
   `<!-- managed by modus — edit the rule in the modus repo, not here -->` and a
@@ -78,6 +99,7 @@ before non-trivial writes.
 
 Summarize installed / skipped / migrated-from-legacy, plus follow-ups the user
 must do by hand — fill a secret, **restart the session so newly enabled plugins
-load**, run a one-time baseline.
+load**, run a one-time baseline. If a plugin is still missing after the restart,
+the machine hasn't installed it yet: `claude plugin install <id>@modus`.
 
 Filter/argument: $ARGUMENTS

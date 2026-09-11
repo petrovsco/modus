@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "description": "Source of truth for /modus:init. Each entry is an opt-in config. category: plugin = enable via enabledPlugins; rule = a committed copy at <project>/.claude/rules/modus/<slug>.md, which Claude Code loads wherever the repo is checked out and the core modus plugin refreshes at session start (the file's existence is the opt-in; no import line); settings/mcp/environment/convention = merged or applied per the install steps. `scope` = where it lands (project | global | machine). `recommendWhen` lets /modus:init pre-check relevant items after sniffing the project.",
+  "description": "Source of truth for /modus:init. Each entry is an opt-in config. category: plugin = declare the modus marketplace and enable the plugin in the committed <project>/.claude/settings.json, so the choice travels with the repo (a cloud session installs it at start); rule = a committed copy at <project>/.claude/rules/modus/<slug>.md, which Claude Code loads wherever the repo is checked out and the core modus plugin refreshes at session start (the file's existence is the opt-in; no import line); settings/mcp/environment/convention = merged or applied per the install steps. `scope` = where it lands (project | global | machine). `recommendWhen` lets /modus:init pre-check relevant items after sniffing the project.",
   "entries": [
     {
       "id": "session-flow",
@@ -10,7 +10,7 @@
       "summary": "Context-budget guard (zero model tokens): a terminal warning for the user past ~90% of the window, one wrap-up request to the model when it is about to stop above that, and a re-arm plus hand-off check after each auto-compaction; a memory-review nudge after each git commit; and the /roadmap command over the project's <project>.rfcs specification repo — each RFC named NNNN-<slug>.md, where the number is a permanent ID that survives renames and the move into done/. Falls back to docs/roadmap/ for projects not migrated yet.",
       "assets": ["plugins/session-flow"],
       "install": [
-        "Merge {\"enabledPlugins\": {\"session-flow@modus\": true}} into <project>/.claude/settings.local.json (or settings.json to commit the choice).",
+        "Merge {\"extraKnownMarketplaces\": {\"modus\": {\"source\": {\"source\": \"github\", \"repo\": \"petrovsco/modus\"}}}, \"enabledPlugins\": {\"session-flow@modus\": true}} into the committed <project>/.claude/settings.json — settings.local.json is gitignored, so a choice written there reaches no collaborator and no cloud session.",
         "Make sure the project has a <project>.rfcs repo (see the rfcs-repo entry); /roadmap falls back to docs/roadmap/ until it does.",
         "Remove legacy copies if present: .claude/hooks/context-guard.mjs, .claude/commands/roadmap.md, and the matching hook entries in settings.local.json.",
         "Restart the session so the plugin loads."
@@ -27,7 +27,7 @@
       "summary": "Playwright MCP server plus the visual-iteration skill: serve scratch HTML/SVG over HTTP, iterate with element screenshots, clean up after.",
       "assets": ["plugins/visual-iteration"],
       "install": [
-        "Merge {\"enabledPlugins\": {\"visual-iteration@modus\": true}} into <project>/.claude/settings.local.json.",
+        "Merge {\"extraKnownMarketplaces\": {\"modus\": {\"source\": {\"source\": \"github\", \"repo\": \"petrovsco/modus\"}}}, \"enabledPlugins\": {\"visual-iteration@modus\": true}} into the committed <project>/.claude/settings.json.",
         "Remove a legacy playwright block from <project>/.mcp.json if the plugin now provides it.",
         "Restart the session so the plugin loads."
       ],
