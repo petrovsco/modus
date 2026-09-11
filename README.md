@@ -79,6 +79,21 @@ and the rules there, and the board reads the sibling `.rfcs` repos:
 git clone git@github.com:petrovsco/modus.git ~/Projects/modus
 ```
 
+### Switching a machine that already had the folder source
+
+Verified on WSL, 2026-09-11. The swap drops two things without saying so:
+
+```
+/plugin marketplace remove modus      ← also disables modus@modus
+/plugin marketplace add petrovsco/modus
+claude plugin install modus@modus --scope user
+```
+
+`remove` deletes the plugin from `enabledPlugins`, and `add` rewrites the
+marketplace entry **without** `autoUpdate`. Re-install the plugin and turn
+auto-update on again — neither returns on its own, and a session started in
+between runs with no modus plugin at all.
+
 ## Per-repo setup
 
 Run **`/modus:init`** in the target repo. It sniffs the stack, recommends
