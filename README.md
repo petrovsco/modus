@@ -102,9 +102,15 @@ catalog entries, and installs what you pick:
 - **plugins** (`session-flow`, `visual-iteration`) → declared in the repo's
   **committed** `.claude/settings.json`: the `modus` marketplace under
   `extraKnownMarketplaces`, the plugins under `enabledPlugins` — nothing copied.
-  Committed, not `settings.local.json`, because `*.local.json` is gitignored:
-  the declaration has to travel with the repo for a cloud session (or a second
-  machine) to install the plugins at session start.
+  Committed, not `settings.local.json`, because `*.local.json` is gitignored
+  and a declaration that cannot travel with the repo is useless to any reader
+  but this machine. **What that buys today is narrower than it looks.** Tested
+  2026-09-11: a cloud session *reads* the file — it quoted the declaration back
+  — and installed nothing. Its plugin list was empty, its synced-plugin
+  directory empty, and the SessionStart hook never ran. So in a cloud sandbox
+  you get the **house rules** (committed files, no plugin needed) and none of
+  the commands, skills or hooks. Treat the declaration as correct and
+  forward-looking, not as a working install path.
 - **house rules** → one committed file each in the repo's
   `.claude/rules/modus/`. Edit a rule here → every repo's copy is refreshed at
   its next session start.
